@@ -1,0 +1,14 @@
+addrmap defaultid4489950 {
+   reg {
+      name = "data";
+      desc = "Data read/write register";
+      field {
+         name = "data_field";
+         desc = "Data read/write field";
+         sw = rw;
+         hw = r;
+         reset = 32'b00000000000000000000000000000100;
+         reset = 32'd2;
+      } data_field[31:0];
+   } data @0x0;
+};

@@ -1261,7 +1261,7 @@ class SystemRDLParser ( Parser ):
                 self.s_id()
 
             elif token in [SystemRDLParser.LBRACE]:
-
+                pass
             else:
                 raise NoViableAltException(self)
 

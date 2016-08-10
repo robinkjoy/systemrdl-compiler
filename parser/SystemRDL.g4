@@ -40,7 +40,7 @@ root
 
  property_definition
    : 'property'
-     id
+     s_id
      LBRACE
      property_body
      RBRACE
@@ -72,7 +72,7 @@ property_type
 property_default
   :
     (
-    'default' EQ (str | num | 'true' | 'false')
+    'default' EQ (string | num | 'true' | 'false')
     SEMI
     )
   ;
@@ -104,7 +104,7 @@ property_ref_type
 
 component_def
   : ( 'addrmap' | 'regfile' | 'reg' | 'field' | 'signal' )
-    ( id
+    ( s_id
     |
     )
     LBRACE
@@ -121,8 +121,8 @@ component_def
 explicit_component_inst
   : ( 'external' )?
     ( 'internal' )?
-    ( 'alias' id )?
-    id
+    ( 'alias' s_id )?
+    s_id
     component_inst_elem
     (COMMA component_inst_elem)*
     SEMI
@@ -135,7 +135,7 @@ anonymous_component_inst_elems
   ;
 
 component_inst_elem
-  : id
+  : s_id
     (array)?
     (EQ  num)?   // reset
     (AT  num)?   // address
@@ -152,11 +152,11 @@ array
 instance_ref
   : instance_ref_elem
     (DOT instance_ref_elem)*
-    ( DREF property )?
+    ( DREF s_property )?
   ;
 
 instance_ref_elem
-  : id
+  : s_id
     (LSQ num RSQ)?
   ;
 
@@ -173,9 +173,9 @@ default_property_assign
 
 explicit_property_assign
   : property_modifier
-    property
+    s_property
 
-  | property
+  | s_property
     ( EQ property_assign_rhs )
   ;
 
@@ -203,7 +203,7 @@ concat_elem
   | num
   ;
 
-property
+s_property
   : 'name'
   | 'desc'
   | 'arbiter'
@@ -327,7 +327,7 @@ property_rvalue_constant
   | 'sw'
 
   | num
-  | str
+  | string
   ;
 
 property_modifier
@@ -338,7 +338,7 @@ property_modifier
   | 'nonsticky'
   ;
 
-id
+s_id
   : ID
   | INST_ID
   ;
@@ -347,12 +347,12 @@ num
   : NUM
   ;
 
-str
+string
   : STR
   ;
 
 enum_def
-  : 'enum' id
+  : 'enum' s_id
     enum_body
     SEMI
   ;
@@ -362,7 +362,7 @@ enum_body
   ;
 
 enum_entry
-  : id
+  : s_id
     EQ num
     ( LBRACE (enum_property_assign)* RBRACE )?
     SEMI
@@ -372,13 +372,15 @@ enum_property_assign
   : ( 'name'
     | 'desc'
     )
-    EQ str
+    EQ string
     SEMI
   ;
 
 fragment LETTER : ('a'..'z'|'A'..'Z') ;
 
-WS : [ \t\r\n]+ -> skip;
+WS :
+  [ \t\r\n]+ -> skip
+  ;
 
 COMMENT
   : '/*' .*? '*/' -> skip

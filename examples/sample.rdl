@@ -9,6 +9,6 @@ addrmap am1 {
       sw = rw;
       hw = r;
       reset = 32'd2;
-    } data_field[31:0];
+    } data_field[31:0] = 32'd12;
   } data @0x0;
 };

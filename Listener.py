@@ -251,9 +251,14 @@ class Listener(SystemRDLListener):
                 else:
                     inst = [comp.customcopy() for i in range(size)]
         inst_id = ctx.getChild(0).getText()
+        #print(dir(ctx.getToken(SystemRDLParser.EQ, 0)))
+        for child in ctx.children:
+            if child.getText() == '=':
+                print(child.getText())
         if isinstance(inst, list):
-            [setattr(x, 'inst_id', inst_id) for x in inst]
-            [setattr(x, 'parent', parent) for x in inst]
+            for x in inst:
+                setattr(x, 'inst_id', inst_id)
+                setattr(x, 'parent', parent)
         else:
             inst.inst_id = inst_id
             inst.parent = parent

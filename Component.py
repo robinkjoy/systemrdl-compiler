@@ -126,7 +126,12 @@ class Component:
                                                                             self.get_type()))
 
     def customcopy(self):
+        # don't copy references to other components, except child Components
         memo = {id(self.parent): self.parent}
+        for prop in self.PROPERTIES:
+            prop_value = getattr(self, prop)
+            if isinstance(prop_value, Component):
+                memo.update({id(prop_value): prop_value})
         return deepcopy(self, memo)
 
     def add_comp(self, inst):

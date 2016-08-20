@@ -1,4 +1,4 @@
-# Generated from java-escape by ANTLR 4.5
+# Generated from SystemRDL.g4 by ANTLR 4.5.3
 from antlr4 import *
 from io import StringIO
 
@@ -654,9 +654,9 @@ class SystemRDLLexer(Lexer):
     INC = 128
     MOD = 129
 
-    modeNames = [ u"DEFAULT_MODE" ]
+    modeNames = [ "DEFAULT_MODE" ]
 
-    literalNames = [ u"<INVALID>",
+    literalNames = [ "<INVALID>",
             "'property'", "'type'", "'default'", "'true'", "'false'", "'component'", 
             "'signal'", "'addrmap'", "'reg'", "'regfile'", "'field'", "'all'", 
             "'boolean'", "'string'", "'number'", "'ref'", "'external'", 
@@ -680,7 +680,7 @@ class SystemRDLLexer(Lexer):
             "'nonsticky'", "'{'", "'}'", "'['", "']'", "'('", "')'", "'@'", 
             "'|'", "';'", "':'", "','", "'.'", "'->'", "'='", "'+='", "'%='" ]
 
-    symbolicNames = [ u"<INVALID>",
+    symbolicNames = [ "<INVALID>",
             "WS", "COMMENT", "LINE_COMMENT", "ID", "NUM", "STR", "LBRACE", 
             "RBRACE", "LSQ", "RSQ", "LPAREN", "RPAREN", "AT", "OR", "SEMI", 
             "COLON", "COMMA", "DOT", "DREF", "EQ", "INC", "MOD" ]
@@ -712,7 +712,7 @@ class SystemRDLLexer(Lexer):
 
     def __init__(self, input=None):
         super().__init__(input)
-        self.checkVersion("4.5")
+        self.checkVersion("4.5.3")
         self._interp = LexerATNSimulator(self, self.atn, self.decisionsToDFA, PredictionContextCache())
         self._actions = None
         self._predicates = None

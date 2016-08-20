@@ -1,12 +1,75 @@
-# Generated from SystemRDL.g4 by ANTLR 4.5.3
-from antlr4 import *
-if __name__ is not None and "." in __name__:
-    from .SystemRDLParser import SystemRDLParser
-else:
-    from SystemRDLParser import SystemRDLParser
+import re
+from parser.SystemRDLListener import SystemRDLListener
+from parser.SystemRDLParser import SystemRDLParser
+import Component
 
-# This class defines a complete listener for a parse tree produced by SystemRDLParser.
-class SystemRDLListener(ParseTreeListener):
+
+def extract_num(string):
+    if string.isdigit():
+        return int(string)
+    elif string[0:2] in ('0x', '0X'):
+        return int(string, 16)
+    string = re.split('\'([bodh])', string, 1, flags=re.IGNORECASE)
+    if string[2][0] == '_':
+        exit('error: first position of value should not be \'_\'.')
+    base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1][1].to_lower()]
+    return (int(string[0]), int(string[2].translate({ord('_'): None}), base))
+
+
+class Listener(SystemRDLListener):
+
+    COMPONENT_CLASS = {
+        'addrmap': Component.AddrMap,
+        'regfile': Component.RegFile,
+        'reg': Component.Register,
+        'field': Component.Field,
+        'signal': Component.Signal
+        }
+
+    def __init__(self, parser):
+        self.rule_names = parser.ruleNames
+        self.curr_comp = None
+        self.addrmaps = []
+        self.definitions = [[]]
+        self.userdefprops = []
+        self.root_sig_insts = []
+
+    def add_definition(self, definition):
+        allowed_defs = {
+            'Property': [],
+            'Enum': [],
+            'Signal': [],
+            'Field': ['Signal', 'Enum'],
+            'Register': ['Field', 'Signal', 'Enum'],
+            'RegFile': ['Register', 'Field', 'Signal', 'Enum'],
+            'AddrMap': ['RegFile', 'Register', 'Field', 'Signal', 'Enum']
+            }
+        comp_type = definition.get_type()
+        if self.curr_comp is not None:
+            curr_type = self.curr_comp.get_type()
+            if comp_type not in allowed_defs[curr_type]:
+                exit('error: {} definition not allowed in {}'.format(comp_type, curr_type))
+        if any([x for x in self.definitions[-1] if x.def_id == definition.def_id]):
+            exit('error: all definition names should be unique within a scope')
+        self.definitions[-1].append(definition)
+
+    def add_root_sig_inst(self, inst):
+        if any([x for x in self.root_sig_insts if x.inst_id == inst.inst_id]):
+            exit('error: all instance names should be unique within a scope')
+        self.root_sig_insts.append(inst)
+
+    def push_definitions(self):
+        self.definitions.append([])
+
+    def pop_definitions(self):
+        self.definitions.pop()
+
+    def get_definition(self, def_type, def_id):
+        for defs in reversed(self.definitions):
+            definition = [x for x in defs if isinstance(x, def_type) and x.def_id == def_id]
+            if definition:
+                return definition[0]
+        return None
 
     # Enter a parse tree produced by SystemRDLParser#root.
     def enterRoot(self, ctx:SystemRDLParser.RootContext):
@@ -14,8 +77,8 @@ class SystemRDLListener(ParseTreeListener):
 
     # Exit a parse tree produced by SystemRDLParser#root.
     def exitRoot(self, ctx:SystemRDLParser.RootContext):
-        pass
-
+        # addrmaps defined but not instantiated
+        self.addrmaps = [x for x in self.definitions[0] if isinstance(x, Component.AddrMap) and not x.instantiated]
 
     # Enter a parse tree produced by SystemRDLParser#property_definition.
     def enterProperty_definition(self, ctx:SystemRDLParser.Property_definitionContext):
@@ -109,11 +172,25 @@ class SystemRDLListener(ParseTreeListener):
 
     # Enter a parse tree produced by SystemRDLParser#component_def.
     def enterComponent_def(self, ctx:SystemRDLParser.Component_defContext):
-        pass
+        comp_type = ctx.getChild(0).getText()
+        # anonymous instatiation
+        if ctx.getChild(1).getText() == '{':
+            if self.curr_comp is None and comp_type != 'signal':            # (5.1.4)
+                exit('error:{}: {} should not be instantiated in root scope.'.format(ctx.start.line, comp_type))
+            comp = self.COMPONENT_CLASS[comp_type](None, None, self.curr_comp)
+        # definition
+        else:
+            comp = self.COMPONENT_CLASS[comp_type](ctx.getChild(1).getText(), None, self.curr_comp)
+            self.add_definition(comp)
+        self.curr_comp = comp
+        self.push_definitions()
 
     # Exit a parse tree produced by SystemRDLParser#component_def.
     def exitComponent_def(self, ctx:SystemRDLParser.Component_defContext):
-        pass
+        if ctx.getChild(1).getText() == '{' and ctx.anonymous_component_inst_elems() is None:
+            exit('error:{}: definition name or instatiation name not specified.'.format(ctx.start.line))
+        self.curr_comp = self.curr_comp.parent
+        self.pop_definitions()
 
 
     # Enter a parse tree produced by SystemRDLParser#explicit_component_inst.
@@ -127,7 +204,8 @@ class SystemRDLListener(ParseTreeListener):
 
     # Enter a parse tree produced by SystemRDLParser#anonymous_component_inst_elems.
     def enterAnonymous_component_inst_elems(self, ctx:SystemRDLParser.Anonymous_component_inst_elemsContext):
-        pass
+        if self.curr_comp.def_id is not None:
+            exit('error:{}: both definition name and instantiation name specified.'.format(ctx.start.line))
 
     # Exit a parse tree produced by SystemRDLParser#anonymous_component_inst_elems.
     def exitAnonymous_component_inst_elems(self, ctx:SystemRDLParser.Anonymous_component_inst_elemsContext):
@@ -136,7 +214,54 @@ class SystemRDLListener(ParseTreeListener):
 
     # Enter a parse tree produced by SystemRDLParser#component_inst_elem.
     def enterComponent_inst_elem(self, ctx:SystemRDLParser.Component_inst_elemContext):
-        pass
+        if self.rule_names[ctx.parentCtx.getRuleIndex()] == 'anonymous_component_inst_elems':
+            comp = self.curr_comp
+            parent = self.curr_comp.parent
+        else:   # if explicit_component_inst
+            comp_name = ctx.parentCtx.getChild(0, SystemRDLParser.S_idContext).getText()
+            comp = self.get_definition(Component.Component, comp_name)
+            if comp is None:
+                exit('error:{}: component \'{}\' definition not found'.format(
+                    ctx.parentCtx.start.line, comp_name))
+            parent = self.curr_comp
+        if ctx.array() is None:
+            inst = comp.customcopy()
+        else:
+            # array indices
+            if ctx.getChild(1).getChild(2).getText() == ':':
+                inst = comp.customcopy()
+                # (5.1.2.a.3.ii)
+                if inst.get_type() != 'Field':    # Signal too??
+                    exit('error:{}: array indices not allowed for {}'.format(
+                        ctx.start.line, inst.get_type()))
+                high = extract_num(ctx.getChild(1).getChild(1).getText())
+                low = extract_num(ctx.getChild(1).getChild(3).getText())
+                if not isinstance(high, int) or not isinstance(low, int):
+                    exit('error:{}: array indices should be unsizedNumeric'.format(
+                        ctx.start.line))
+                inst.position = (high, low)
+            else:
+                size = extract_num(ctx.getChild(1).getChild(1).getText())
+                if not isinstance(size, int):
+                    exit('error:{}: array size should be unsizedNumeric'.format(
+                        ctx.start.line))
+                if comp.get_type() in ('Field', 'Signal'):
+                    inst = comp.customcopy()
+                    inst.size = size
+                else:
+                    inst = [comp.customcopy() for i in range(size)]
+        inst_id = ctx.getChild(0).getText()
+        if isinstance(inst, list):
+            [setattr(x, 'inst_id', inst_id) for x in inst]
+            [setattr(x, 'parent', parent) for x in inst]
+        else:
+            inst.inst_id = inst_id
+            inst.parent = parent
+        # if in root, component is signal
+        if parent is None:
+            self.add_root_sig_inst(inst)
+        else:
+            parent.add_comp(inst)
 
     # Exit a parse tree produced by SystemRDLParser#component_inst_elem.
     def exitComponent_inst_elem(self, ctx:SystemRDLParser.Component_inst_elemContext):
@@ -321,5 +446,3 @@ class SystemRDLListener(ParseTreeListener):
     # Exit a parse tree produced by SystemRDLParser#enum_property_assign.
     def exitEnum_property_assign(self, ctx:SystemRDLParser.Enum_property_assignContext):
         pass
-
-

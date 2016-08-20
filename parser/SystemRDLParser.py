@@ -1,13 +1,8 @@
-# Generated from java-escape by ANTLR 4.5
+# Generated from SystemRDL.g4 by ANTLR 4.5.3
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
-package = globals().get("__package__", None)
-ischild = len(package)>0 if package is not None else False
-if ischild:
-    from .SystemRDLListener import SystemRDLListener
-else:
-    from SystemRDLListener import SystemRDLListener
+
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\u0085")
@@ -188,7 +183,7 @@ def serializedATN():
 
 class SystemRDLParser ( Parser ):
 
-    grammarFileName = "java-escape"
+    grammarFileName = "SystemRDL.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
@@ -196,68 +191,65 @@ class SystemRDLParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ u"<INVALID>", u"'property'", u"'type'", u"'default'", 
-                     u"'true'", u"'false'", u"'component'", u"'signal'", 
-                     u"'addrmap'", u"'reg'", u"'regfile'", u"'field'", u"'all'", 
-                     u"'boolean'", u"'string'", u"'number'", u"'ref'", u"'external'", 
-                     u"'internal'", u"'alias'", u"'enum'", u"'name'", u"'desc'", 
-                     u"'arbiter'", u"'rset'", u"'rclr'", u"'woclr'", u"'woset'", 
-                     u"'we'", u"'wel'", u"'swwe'", u"'swwel'", u"'hwset'", 
-                     u"'hwclr'", u"'swmod'", u"'swacc'", u"'sticky'", u"'stickybit'", 
-                     u"'intr'", u"'anded'", u"'ored'", u"'xored'", u"'counter'", 
-                     u"'overflow'", u"'sharedextbus'", u"'errextbus'", u"'reset'", 
-                     u"'littleendian'", u"'bigendian'", u"'rsvdset'", u"'rsvdsetX'", 
-                     u"'bridge'", u"'shared'", u"'msb0'", u"'lsb0'", u"'sync'", 
-                     u"'async'", u"'cpuif_reset'", u"'field_reset'", u"'activehigh'", 
-                     u"'activelow'", u"'singlepulse'", u"'underflow'", u"'incr'", 
-                     u"'decr'", u"'incrwidth'", u"'decrwidth'", u"'incrvalue'", 
-                     u"'decrvalue'", u"'saturate'", u"'decrsaturate'", u"'threshold'", 
-                     u"'decrthreshold'", u"'dontcompare'", u"'donttest'", 
-                     u"'alignment'", u"'regwidth'", u"'fieldwidth'", u"'signalwidth'", 
-                     u"'accesswidth'", u"'sw'", u"'hw'", u"'addressing'", 
-                     u"'precedence'", u"'encode'", u"'resetsignal'", u"'clock'", 
-                     u"'mask'", u"'enable'", u"'hwenable'", u"'hwmask'", 
-                     u"'haltmask'", u"'haltenable'", u"'halt'", u"'next'", 
-                     u"'rw'", u"'wr'", u"'r'", u"'w'", u"'na'", u"'compact'", 
-                     u"'regalign'", u"'fullalign'", u"'posedge'", u"'negedge'", 
-                     u"'bothedge'", u"'level'", u"'nonsticky'", u"<INVALID>", 
-                     u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                     u"<INVALID>", u"'{'", u"'}'", u"'['", u"']'", u"'('", 
-                     u"')'", u"'@'", u"'|'", u"';'", u"':'", u"','", u"'.'", 
-                     u"'->'", u"'='", u"'+='", u"'%='" ]
+    literalNames = [ "<INVALID>", "'property'", "'type'", "'default'", "'true'", 
+                     "'false'", "'component'", "'signal'", "'addrmap'", 
+                     "'reg'", "'regfile'", "'field'", "'all'", "'boolean'", 
+                     "'string'", "'number'", "'ref'", "'external'", "'internal'", 
+                     "'alias'", "'enum'", "'name'", "'desc'", "'arbiter'", 
+                     "'rset'", "'rclr'", "'woclr'", "'woset'", "'we'", "'wel'", 
+                     "'swwe'", "'swwel'", "'hwset'", "'hwclr'", "'swmod'", 
+                     "'swacc'", "'sticky'", "'stickybit'", "'intr'", "'anded'", 
+                     "'ored'", "'xored'", "'counter'", "'overflow'", "'sharedextbus'", 
+                     "'errextbus'", "'reset'", "'littleendian'", "'bigendian'", 
+                     "'rsvdset'", "'rsvdsetX'", "'bridge'", "'shared'", 
+                     "'msb0'", "'lsb0'", "'sync'", "'async'", "'cpuif_reset'", 
+                     "'field_reset'", "'activehigh'", "'activelow'", "'singlepulse'", 
+                     "'underflow'", "'incr'", "'decr'", "'incrwidth'", "'decrwidth'", 
+                     "'incrvalue'", "'decrvalue'", "'saturate'", "'decrsaturate'", 
+                     "'threshold'", "'decrthreshold'", "'dontcompare'", 
+                     "'donttest'", "'alignment'", "'regwidth'", "'fieldwidth'", 
+                     "'signalwidth'", "'accesswidth'", "'sw'", "'hw'", "'addressing'", 
+                     "'precedence'", "'encode'", "'resetsignal'", "'clock'", 
+                     "'mask'", "'enable'", "'hwenable'", "'hwmask'", "'haltmask'", 
+                     "'haltenable'", "'halt'", "'next'", "'rw'", "'wr'", 
+                     "'r'", "'w'", "'na'", "'compact'", "'regalign'", "'fullalign'", 
+                     "'posedge'", "'negedge'", "'bothedge'", "'level'", 
+                     "'nonsticky'", "<INVALID>", "<INVALID>", "<INVALID>", 
+                     "<INVALID>", "<INVALID>", "<INVALID>", "'{'", "'}'", 
+                     "'['", "']'", "'('", "')'", "'@'", "'|'", "';'", "':'", 
+                     "','", "'.'", "'->'", "'='", "'+='", "'%='" ]
 
-    symbolicNames = [ u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"<INVALID>", u"<INVALID>", u"<INVALID>", u"<INVALID>", 
-                      u"WS", u"COMMENT", u"LINE_COMMENT", u"ID", u"NUM", 
-                      u"STR", u"LBRACE", u"RBRACE", u"LSQ", u"RSQ", u"LPAREN", 
-                      u"RPAREN", u"AT", u"OR", u"SEMI", u"COLON", u"COMMA", 
-                      u"DOT", u"DREF", u"EQ", u"INC", u"MOD", u"INST_ID", 
-                      u"PROPERTY" ]
+    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "WS", "COMMENT", "LINE_COMMENT", "ID", "NUM", "STR", 
+                      "LBRACE", "RBRACE", "LSQ", "RSQ", "LPAREN", "RPAREN", 
+                      "AT", "OR", "SEMI", "COLON", "COMMA", "DOT", "DREF", 
+                      "EQ", "INC", "MOD", "INST_ID", "PROPERTY" ]
 
     RULE_root = 0
     RULE_property_definition = 1
@@ -442,7 +434,7 @@ class SystemRDLParser ( Parser ):
 
     def __init__(self, input:TokenStream):
         super().__init__(input)
-        self.checkVersion("4.5")
+        self.checkVersion("4.5.3")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
 
@@ -496,12 +488,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_root
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterRoot" ):
                 listener.enterRoot(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitRoot" ):
                 listener.exitRoot(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitRoot" ):
+                return visitor.visitRoot(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -518,6 +516,7 @@ class SystemRDLParser ( Parser ):
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << SystemRDLParser.T__0) | (1 << SystemRDLParser.T__2) | (1 << SystemRDLParser.T__6) | (1 << SystemRDLParser.T__7) | (1 << SystemRDLParser.T__8) | (1 << SystemRDLParser.T__9) | (1 << SystemRDLParser.T__10) | (1 << SystemRDLParser.T__16) | (1 << SystemRDLParser.T__17) | (1 << SystemRDLParser.T__18) | (1 << SystemRDLParser.T__19) | (1 << SystemRDLParser.T__20) | (1 << SystemRDLParser.T__21) | (1 << SystemRDLParser.T__22) | (1 << SystemRDLParser.T__23) | (1 << SystemRDLParser.T__24) | (1 << SystemRDLParser.T__25) | (1 << SystemRDLParser.T__26) | (1 << SystemRDLParser.T__27) | (1 << SystemRDLParser.T__28) | (1 << SystemRDLParser.T__29) | (1 << SystemRDLParser.T__30) | (1 << SystemRDLParser.T__31) | (1 << SystemRDLParser.T__32) | (1 << SystemRDLParser.T__33) | (1 << SystemRDLParser.T__34) | (1 << SystemRDLParser.T__35) | (1 << SystemRDLParser.T__36) | (1 << SystemRDLParser.T__37) | (1 << SystemRDLParser.T__38) | (1 << SystemRDLParser.T__39) | (1 << SystemRDLParser.T__40) | (1 << SystemRDLParser.T__41) | (1 << SystemRDLParser.T__42) | (1 << SystemRDLParser.T__43) | (1 << SystemRDLParser.T__44) | (1 << SystemRDLParser.T__45) | (1 << SystemRDLParser.T__46) | (1 << SystemRDLParser.T__47) | (1 << SystemRDLParser.T__48) | (1 << SystemRDLParser.T__49) | (1 << SystemRDLParser.T__50) | (1 << SystemRDLParser.T__51) | (1 << SystemRDLParser.T__52) | (1 << SystemRDLParser.T__53) | (1 << SystemRDLParser.T__54) | (1 << SystemRDLParser.T__55) | (1 << SystemRDLParser.T__56) | (1 << SystemRDLParser.T__57) | (1 << SystemRDLParser.T__58) | (1 << SystemRDLParser.T__59) | (1 << SystemRDLParser.T__60) | (1 << SystemRDLParser.T__61) | (1 << SystemRDLParser.T__62))) != 0) or ((((_la - 64)) & ~0x3f) == 0 and ((1 << (_la - 64)) & ((1 << (SystemRDLParser.T__63 - 64)) | (1 << (SystemRDLParser.T__64 - 64)) | (1 << (SystemRDLParser.T__65 - 64)) | (1 << (SystemRDLParser.T__66 - 64)) | (1 << (SystemRDLParser.T__67 - 64)) | (1 << (SystemRDLParser.T__68 - 64)) | (1 << (SystemRDLParser.T__69 - 64)) | (1 << (SystemRDLParser.T__70 - 64)) | (1 << (SystemRDLParser.T__71 - 64)) | (1 << (SystemRDLParser.T__72 - 64)) | (1 << (SystemRDLParser.T__73 - 64)) | (1 << (SystemRDLParser.T__74 - 64)) | (1 << (SystemRDLParser.T__75 - 64)) | (1 << (SystemRDLParser.T__76 - 64)) | (1 << (SystemRDLParser.T__77 - 64)) | (1 << (SystemRDLParser.T__78 - 64)) | (1 << (SystemRDLParser.T__79 - 64)) | (1 << (SystemRDLParser.T__80 - 64)) | (1 << (SystemRDLParser.T__81 - 64)) | (1 << (SystemRDLParser.T__82 - 64)) | (1 << (SystemRDLParser.T__83 - 64)) | (1 << (SystemRDLParser.T__84 - 64)) | (1 << (SystemRDLParser.T__85 - 64)) | (1 << (SystemRDLParser.T__86 - 64)) | (1 << (SystemRDLParser.T__87 - 64)) | (1 << (SystemRDLParser.T__88 - 64)) | (1 << (SystemRDLParser.T__89 - 64)) | (1 << (SystemRDLParser.T__90 - 64)) | (1 << (SystemRDLParser.T__91 - 64)) | (1 << (SystemRDLParser.T__92 - 64)) | (1 << (SystemRDLParser.T__93 - 64)) | (1 << (SystemRDLParser.T__102 - 64)) | (1 << (SystemRDLParser.T__103 - 64)) | (1 << (SystemRDLParser.T__104 - 64)) | (1 << (SystemRDLParser.T__105 - 64)) | (1 << (SystemRDLParser.T__106 - 64)) | (1 << (SystemRDLParser.ID - 64)))) != 0) or _la==SystemRDLParser.INST_ID or _la==SystemRDLParser.PROPERTY:
                 self.state = 75
+                self._errHandler.sync(self);
                 la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
                 if la_ == 1:
                     self.state = 70
@@ -586,12 +585,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_definition
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_definition" ):
                 listener.enterProperty_definition(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_definition" ):
                 listener.exitProperty_definition(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_definition" ):
+                return visitor.visitProperty_definition(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -644,12 +649,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_body
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_body" ):
                 listener.enterProperty_body(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_body" ):
                 listener.exitProperty_body(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_body" ):
+                return visitor.visitProperty_body(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -781,12 +792,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_type
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_type" ):
                 listener.enterProperty_type(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_type" ):
                 listener.exitProperty_type(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_type" ):
+                return visitor.visitProperty_type(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -856,12 +873,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_default
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_default" ):
                 listener.enterProperty_default(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_default" ):
                 listener.exitProperty_default(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_default" ):
+                return visitor.visitProperty_default(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -936,12 +959,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_usage
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_usage" ):
                 listener.enterProperty_usage(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_usage" ):
                 listener.exitProperty_usage(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_usage" ):
+                return visitor.visitProperty_usage(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -992,12 +1021,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_component
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_component" ):
                 listener.enterProperty_component(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_component" ):
                 listener.exitProperty_component(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_component" ):
+                return visitor.visitProperty_component(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1034,12 +1069,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_boolean_type
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_boolean_type" ):
                 listener.enterProperty_boolean_type(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_boolean_type" ):
                 listener.exitProperty_boolean_type(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_boolean_type" ):
+                return visitor.visitProperty_boolean_type(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1071,12 +1112,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_string_type
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_string_type" ):
                 listener.enterProperty_string_type(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_string_type" ):
                 listener.exitProperty_string_type(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_string_type" ):
+                return visitor.visitProperty_string_type(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1108,12 +1155,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_number_type
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_number_type" ):
                 listener.enterProperty_number_type(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_number_type" ):
                 listener.exitProperty_number_type(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_number_type" ):
+                return visitor.visitProperty_number_type(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1145,12 +1198,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_ref_type
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_ref_type" ):
                 listener.enterProperty_ref_type(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_ref_type" ):
                 listener.exitProperty_ref_type(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_ref_type" ):
+                return visitor.visitProperty_ref_type(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1231,12 +1290,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_component_def
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterComponent_def" ):
                 listener.enterComponent_def(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitComponent_def" ):
                 listener.exitComponent_def(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitComponent_def" ):
+                return visitor.visitComponent_def(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1272,6 +1337,7 @@ class SystemRDLParser ( Parser ):
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << SystemRDLParser.T__2) | (1 << SystemRDLParser.T__6) | (1 << SystemRDLParser.T__7) | (1 << SystemRDLParser.T__8) | (1 << SystemRDLParser.T__9) | (1 << SystemRDLParser.T__10) | (1 << SystemRDLParser.T__16) | (1 << SystemRDLParser.T__17) | (1 << SystemRDLParser.T__18) | (1 << SystemRDLParser.T__19) | (1 << SystemRDLParser.T__20) | (1 << SystemRDLParser.T__21) | (1 << SystemRDLParser.T__22) | (1 << SystemRDLParser.T__23) | (1 << SystemRDLParser.T__24) | (1 << SystemRDLParser.T__25) | (1 << SystemRDLParser.T__26) | (1 << SystemRDLParser.T__27) | (1 << SystemRDLParser.T__28) | (1 << SystemRDLParser.T__29) | (1 << SystemRDLParser.T__30) | (1 << SystemRDLParser.T__31) | (1 << SystemRDLParser.T__32) | (1 << SystemRDLParser.T__33) | (1 << SystemRDLParser.T__34) | (1 << SystemRDLParser.T__35) | (1 << SystemRDLParser.T__36) | (1 << SystemRDLParser.T__37) | (1 << SystemRDLParser.T__38) | (1 << SystemRDLParser.T__39) | (1 << SystemRDLParser.T__40) | (1 << SystemRDLParser.T__41) | (1 << SystemRDLParser.T__42) | (1 << SystemRDLParser.T__43) | (1 << SystemRDLParser.T__44) | (1 << SystemRDLParser.T__45) | (1 << SystemRDLParser.T__46) | (1 << SystemRDLParser.T__47) | (1 << SystemRDLParser.T__48) | (1 << SystemRDLParser.T__49) | (1 << SystemRDLParser.T__50) | (1 << SystemRDLParser.T__51) | (1 << SystemRDLParser.T__52) | (1 << SystemRDLParser.T__53) | (1 << SystemRDLParser.T__54) | (1 << SystemRDLParser.T__55) | (1 << SystemRDLParser.T__56) | (1 << SystemRDLParser.T__57) | (1 << SystemRDLParser.T__58) | (1 << SystemRDLParser.T__59) | (1 << SystemRDLParser.T__60) | (1 << SystemRDLParser.T__61) | (1 << SystemRDLParser.T__62))) != 0) or ((((_la - 64)) & ~0x3f) == 0 and ((1 << (_la - 64)) & ((1 << (SystemRDLParser.T__63 - 64)) | (1 << (SystemRDLParser.T__64 - 64)) | (1 << (SystemRDLParser.T__65 - 64)) | (1 << (SystemRDLParser.T__66 - 64)) | (1 << (SystemRDLParser.T__67 - 64)) | (1 << (SystemRDLParser.T__68 - 64)) | (1 << (SystemRDLParser.T__69 - 64)) | (1 << (SystemRDLParser.T__70 - 64)) | (1 << (SystemRDLParser.T__71 - 64)) | (1 << (SystemRDLParser.T__72 - 64)) | (1 << (SystemRDLParser.T__73 - 64)) | (1 << (SystemRDLParser.T__74 - 64)) | (1 << (SystemRDLParser.T__75 - 64)) | (1 << (SystemRDLParser.T__76 - 64)) | (1 << (SystemRDLParser.T__77 - 64)) | (1 << (SystemRDLParser.T__78 - 64)) | (1 << (SystemRDLParser.T__79 - 64)) | (1 << (SystemRDLParser.T__80 - 64)) | (1 << (SystemRDLParser.T__81 - 64)) | (1 << (SystemRDLParser.T__82 - 64)) | (1 << (SystemRDLParser.T__83 - 64)) | (1 << (SystemRDLParser.T__84 - 64)) | (1 << (SystemRDLParser.T__85 - 64)) | (1 << (SystemRDLParser.T__86 - 64)) | (1 << (SystemRDLParser.T__87 - 64)) | (1 << (SystemRDLParser.T__88 - 64)) | (1 << (SystemRDLParser.T__89 - 64)) | (1 << (SystemRDLParser.T__90 - 64)) | (1 << (SystemRDLParser.T__91 - 64)) | (1 << (SystemRDLParser.T__92 - 64)) | (1 << (SystemRDLParser.T__93 - 64)) | (1 << (SystemRDLParser.T__102 - 64)) | (1 << (SystemRDLParser.T__103 - 64)) | (1 << (SystemRDLParser.T__104 - 64)) | (1 << (SystemRDLParser.T__105 - 64)) | (1 << (SystemRDLParser.T__106 - 64)) | (1 << (SystemRDLParser.ID - 64)))) != 0) or _la==SystemRDLParser.INST_ID or _la==SystemRDLParser.PROPERTY:
                 self.state = 172
+                self._errHandler.sync(self);
                 la_ = self._interp.adaptivePredict(self._input,12,self._ctx)
                 if la_ == 1:
                     self.state = 168
@@ -1350,12 +1416,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_explicit_component_inst
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterExplicit_component_inst" ):
                 listener.enterExplicit_component_inst(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitExplicit_component_inst" ):
                 listener.exitExplicit_component_inst(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExplicit_component_inst" ):
+                return visitor.visitExplicit_component_inst(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1439,12 +1511,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_anonymous_component_inst_elems
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterAnonymous_component_inst_elems" ):
                 listener.enterAnonymous_component_inst_elems(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitAnonymous_component_inst_elems" ):
                 listener.exitAnonymous_component_inst_elems(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitAnonymous_component_inst_elems" ):
+                return visitor.visitAnonymous_component_inst_elems(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1522,12 +1600,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_component_inst_elem
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterComponent_inst_elem" ):
                 listener.enterComponent_inst_elem(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitComponent_inst_elem" ):
                 listener.exitComponent_inst_elem(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitComponent_inst_elem" ):
+                return visitor.visitComponent_inst_elem(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1618,12 +1702,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_array
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterArray" ):
                 listener.enterArray(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitArray" ):
                 listener.exitArray(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitArray" ):
+                return visitor.visitArray(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1688,12 +1778,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_instance_ref
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterInstance_ref" ):
                 listener.enterInstance_ref(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitInstance_ref" ):
                 listener.exitInstance_ref(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitInstance_ref" ):
+                return visitor.visitInstance_ref(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1760,12 +1856,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_instance_ref_elem
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterInstance_ref_elem" ):
                 listener.enterInstance_ref_elem(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitInstance_ref_elem" ):
                 listener.exitInstance_ref_elem(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitInstance_ref_elem" ):
+                return visitor.visitInstance_ref_elem(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1823,12 +1925,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_assign
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_assign" ):
                 listener.enterProperty_assign(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_assign" ):
                 listener.exitProperty_assign(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_assign" ):
+                return visitor.visitProperty_assign(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1886,12 +1994,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_default_property_assign
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterDefault_property_assign" ):
                 listener.enterDefault_property_assign(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitDefault_property_assign" ):
                 listener.exitDefault_property_assign(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitDefault_property_assign" ):
+                return visitor.visitDefault_property_assign(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -1939,12 +2053,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_explicit_property_assign
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterExplicit_property_assign" ):
                 listener.enterExplicit_property_assign(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitExplicit_property_assign" ):
                 listener.exitExplicit_property_assign(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitExplicit_property_assign" ):
+                return visitor.visitExplicit_property_assign(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2005,12 +2125,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_post_property_assign
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterPost_property_assign" ):
                 listener.enterPost_property_assign(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitPost_property_assign" ):
                 listener.exitPost_property_assign(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitPost_property_assign" ):
+                return visitor.visitPost_property_assign(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2062,12 +2188,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_assign_rhs
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_assign_rhs" ):
                 listener.enterProperty_assign_rhs(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_assign_rhs" ):
                 listener.exitProperty_assign_rhs(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_assign_rhs" ):
+                return visitor.visitProperty_assign_rhs(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2141,12 +2273,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_concat
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterConcat" ):
                 listener.enterConcat(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitConcat" ):
                 listener.exitConcat(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitConcat" ):
+                return visitor.visitConcat(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2202,12 +2340,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_concat_elem
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterConcat_elem" ):
                 listener.enterConcat_elem(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitConcat_elem" ):
                 listener.exitConcat_elem(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitConcat_elem" ):
+                return visitor.visitConcat_elem(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2253,12 +2397,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_s_property
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterS_property" ):
                 listener.enterS_property(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitS_property" ):
                 listener.exitS_property(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitS_property" ):
+                return visitor.visitS_property(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2302,12 +2452,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_rvalue_constant
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_rvalue_constant" ):
                 listener.enterProperty_rvalue_constant(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_rvalue_constant" ):
                 listener.exitProperty_rvalue_constant(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_rvalue_constant" ):
+                return visitor.visitProperty_rvalue_constant(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2411,12 +2567,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_property_modifier
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterProperty_modifier" ):
                 listener.enterProperty_modifier(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitProperty_modifier" ):
                 listener.exitProperty_modifier(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitProperty_modifier" ):
+                return visitor.visitProperty_modifier(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2458,12 +2620,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_s_id
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterS_id" ):
                 listener.enterS_id(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitS_id" ):
                 listener.exitS_id(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitS_id" ):
+                return visitor.visitS_id(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2502,12 +2670,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_num
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterNum" ):
                 listener.enterNum(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitNum" ):
                 listener.exitNum(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitNum" ):
+                return visitor.visitNum(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2541,12 +2715,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_string
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterString" ):
                 listener.enterString(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitString" ):
                 listener.exitString(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitString" ):
+                return visitor.visitString(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2588,12 +2768,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_enum_def
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterEnum_def" ):
                 listener.enterEnum_def(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitEnum_def" ):
                 listener.exitEnum_def(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitEnum_def" ):
+                return visitor.visitEnum_def(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2643,12 +2829,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_enum_body
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterEnum_body" ):
                 listener.enterEnum_body(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitEnum_body" ):
                 listener.exitEnum_body(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitEnum_body" ):
+                return visitor.visitEnum_body(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2719,12 +2911,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_enum_entry
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterEnum_entry" ):
                 listener.enterEnum_entry(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitEnum_entry" ):
                 listener.exitEnum_entry(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitEnum_entry" ):
+                return visitor.visitEnum_entry(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2791,12 +2989,18 @@ class SystemRDLParser ( Parser ):
             return SystemRDLParser.RULE_enum_property_assign
 
         def enterRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "enterEnum_property_assign" ):
                 listener.enterEnum_property_assign(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if isinstance( listener, SystemRDLListener ):
+            if hasattr( listener, "exitEnum_property_assign" ):
                 listener.exitEnum_property_assign(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitEnum_property_assign" ):
+                return visitor.visitEnum_property_assign(self)
+            else:
+                return visitor.visitChildren(self)
 
 
 
@@ -2827,6 +3031,7 @@ class SystemRDLParser ( Parser ):
         finally:
             self.exitRule()
         return localctx
+
 
 
 

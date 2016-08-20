@@ -129,7 +129,7 @@ explicit_component_inst
   ;
 
 anonymous_component_inst_elems
-  : ('external')?
+  : ('external')?               //?? not in spec
     component_inst_elem
     (COMMA component_inst_elem)*
   ;

@@ -284,7 +284,8 @@ s_property
 
   | 'next'
 
-  | PROPERTY
+//  | PROPERTY  ??
+  | s_id
   ;
 
 property_rvalue_constant

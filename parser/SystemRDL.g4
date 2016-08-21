@@ -26,15 +26,8 @@ root
    ;
 
 property_body
-  :  property_type ( property_usage (property_default)?
-                   | property_default property_usage
-                   )
-  |  property_usage ( property_type (property_default)?
-                    | property_default property_type
-                    )
-  |  property_default ( property_type  property_usage
-                      | property_usage property_type
-                      )
+  :
+   ( property_type | property_usage | property_default )*
   ;
 
 property_type

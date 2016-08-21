@@ -51,10 +51,7 @@ class Component:
             'addressingType': 'realign',
             'precedenceType': 'sw',
             'reference': None,
-            'reference2enum': None,
-            'ComponentType': [],
-            'proptypeType': None,
-            'defaultValue': None
+            'reference2enum': None
             }
         prop_type = self.PROPERTIES[prop]
         if isinstance(prop_type, list):
@@ -84,22 +81,6 @@ class Component:
                 # not implemented
                 print('reference properties not implemented')
                 return True
-            elif prop_type == 'ComponentType' and value[0] in ('field', 'reg', 'regfile', 'addrmap', 'all'):
-                return True
-            elif prop_type == 'proptypeType' and value in ('string', 'number', 'boolean', 'ref'):
-                return True
-            elif prop_type == 'defaultValue':
-                if getattr(self, 'proptype', None) is None:
-                    return False
-                elif self.proptype == 'string':
-                    return isinstance(value, str)
-                elif self.proptype == 'number':
-                    return isinstance(value, int) or isinstance(value, tuple)
-                elif self.proptype == 'boolean':
-                    return isinstance(value, bool)
-                elif self.proptype == 'ref':
-                    print('reference properties not implemented')
-                    return True
         return False
 
     def validate_property(self, prop, value, user_def_props, is_dynamic):
@@ -388,18 +369,10 @@ class EnumEntry(Component):
     def set_property(self, prop, value):
         super().set_property(prop, value, [], False)
 
-class Property(Component):
+class Property():
 
-    PROPERTIES = {
-        'component': 'ComponentType',
-        'proptype': 'proptypeType',
-        'default': 'defaultValue'
-        }
-
-    def __init__(self, def_id):
-        super().__init__(def_id, None, None)
-
-    def set_property(self, prop, value):
-        if prop == 'component':
-            value = [value] + getattr(self, 'component')
-        super().set_property(prop, value, [], False)
+    def __init__(self, prop_id, prop_type, prop_usage, prop_default):
+        self.prop_id = prop_id
+        self.prop_type = prop_type
+        self.prop_usage = prop_usage
+        self.prop_default = prop_default

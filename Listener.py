@@ -31,7 +31,7 @@ class Listener(SystemRDLListener):
         self.curr_comp = None
         self.addrmaps = []
         self.definitions = [[]]
-        self.userdefprops = []
+        self.user_def_props = []
         self.root_sig_insts = []
 
     def add_definition(self, definition):
@@ -103,7 +103,40 @@ class Listener(SystemRDLListener):
 
     # Enter a parse tree produced by SystemRDLParser#property_body.
     def enterProperty_body(self, ctx:SystemRDLParser.Property_bodyContext):
-        pass
+        prop_id = ctx.parentCtx.getChild(0, SystemRDLParser.S_idContext).getText()
+        if not ctx.property_type():
+            exit('error:{}: property type not specified'.format(ctx.start.line))
+        if len(ctx.property_type()) > 1:
+            exit('error:{}: property type reassigned'.format(ctx.start.line))
+        prop_type = ctx.getChild(0, SystemRDLParser.Property_typeContext).getChild(2).getText()
+        if not ctx.property_usage():
+            exit('error:{}: property usage not specified'.format(ctx.start.line))
+        if len(ctx.property_usage()) > 1:
+            exit('error:{}: property usage reassigned'.format(ctx.start.line))
+        prop_usage = []
+        prop_usage_ctx = ctx.getChild(0, SystemRDLParser.Property_usageContext)
+        for childctx in prop_usage_ctx.getChildren():
+            if isinstance(childctx, SystemRDLParser.Property_componentContext):
+                prop_usage.append(childctx.getText())
+        if len(ctx.property_default()) > 1:
+            exit('error:{}: property default reassigned'.format(ctx.start.line))
+        prop_default_ctx = ctx.getChild(0, SystemRDLParser.Property_defaultContext)
+        prop_default_str = prop_default_ctx.getChild(2).getText()
+        if prop_default_ctx.string() is not None:
+            if prop_type != 'string':
+                exit('error:{}: default does not match type.'.format(ctx.start.line))
+            prop_default = prop_default_str
+        elif prop_default_ctx.num() is not None:
+            if prop_type != 'number':
+                exit('error:{}: default does not match type.'.format(ctx.start.line))
+            prop_default = extract_num(prop_default_str)
+            if not isinstance(prop_default, int):
+                exit('error:{}: default value cannot be sizedNumeric.'.format(ctx.start.line))
+        else:
+            if prop_type != 'boolean':
+                exit('error:{}: default does not match type.'.format(ctx.start.line))
+            prop_default = True if prop_default_str == 'true' else False
+        self.user_def_props.append(Component.Property(prop_id, prop_type, prop_usage, prop_default))
 
     # Exit a parse tree produced by SystemRDLParser#property_body.
     def exitProperty_body(self, ctx:SystemRDLParser.Property_bodyContext):

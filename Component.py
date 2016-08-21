@@ -60,28 +60,28 @@ class Component:
         if isinstance(prop_types, str):
             prop_types = [prop_types]
         for prop_type in prop_types:
-            if prop_type == 'boolean':
-                return isinstance(value, bool)
-            elif prop_type == 'string':
-                return isinstance(value, str)
-            elif prop_type in ('numeric', 'unsizedNumeric'):
-                return isinstance(value, int)
-            elif prop_type == 'sizedNumeric':
-                return isinstance(value, tuple)
-            elif prop_type == 'accessType':
-                return value in ('rw', 'wr', 'r', 'w', 'na')
-            elif prop_type == 'addressingType':
-                return value in ('compact', 'realign', 'fullalign')
-            elif prop_type == 'precedenceType':
-                return value in ('sw', 'hw')
+            if prop_type == 'boolean' and isinstance(value, bool):
+                return True
+            elif prop_type == 'string' and isinstance(value, str):
+                return True
+            elif prop_type in ('numeric', 'unsizedNumeric') and isinstance(value, int):
+                return True
+            elif prop_type == 'sizedNumeric' and isinstance(value, tuple):
+                return True
+            elif prop_type == 'accessType' and value in ('rw', 'wr', 'r', 'w', 'na'):
+                return True
+            elif prop_type == 'addressingType' and value in ('compact', 'realign', 'fullalign'):
+                return True
+            elif prop_type == 'precedenceType' and value in ('sw', 'hw'):
+                return True
             elif prop_type == 'reference':
                 # not implemented
                 print('reference properties not implemented')
                 return True
-            elif prop_type == 'ComponentType':
-                return value[0] in ('field', 'reg', 'regfile', 'addrmap', 'all')
-            elif prop_type == 'proptypeType':
-                return value in ('string', 'number', 'boolean', 'ref')
+            elif prop_type == 'ComponentType' and value[0] in ('field', 'reg', 'regfile', 'addrmap', 'all'):
+                return True
+            elif prop_type == 'proptypeType' and value in ('string', 'number', 'boolean', 'ref'):
+                return True
             elif prop_type == 'defaultValue':
                 if getattr(self, 'proptype', None) is None:
                     return False
@@ -94,6 +94,7 @@ class Component:
                 elif self.proptype == 'ref':
                     print('reference properties not implemented')
                     return True
+        return False
 
     def validate_property(self, prop, value, user_def_props, is_dynamic):
         if prop in self.PROPERTIES:
@@ -120,8 +121,13 @@ class Component:
         return value
 
     def validate_exclusivity(self):
+        def true_or_assigned(val):
+            if val is None or (isinstance(val, bool) and not val):
+                return 0
+            else:
+                return 1
         for exs in self.EXCLUSIVES:
-            if sum(map(bool, [getattr(self, ex) for ex in exs])) > 1:
+            if sum(map(true_or_assigned, [getattr(self, ex) for ex in exs])) > 1:
                 exit('Error: Properties {} should be exclusive in {}'.format(', '.join(exs),
                                                                             self.get_type()))
 
@@ -212,7 +218,7 @@ class RegFile(Component):
         'align_addr': 'unsizedNumeric'
         }
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus']
-    EXCLUSIVES = [['at_addr', 'align_addr']] # (9.1.1.h)
+    EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
 
     def set_property(self, prop, value, user_def_props, is_dynamic=False):
         super().set_property(prop, value, user_def_props, is_dynamic)
@@ -228,17 +234,25 @@ class Register(Component):
         'errextbus': 'numeric',
         'intr': 'reference',
         'halt': 'reference',
-        'shared': 'boolean'
+        'shared': 'boolean',
+        # Instance properties
+        'at_addr': 'unsizedNumeric',
+        'inc_addr': 'unsizedNumeric',
+        'align_addr': 'unsizedNumeric'
         }
     NON_DYNAMIC_PROPERTIES = ['regwidth', 'shared']
+    EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
 
     def set_property(self, prop, value, user_def_props, is_dynamic=False):
-        super().set_property(prop, value, user_def_props, is_dynamic)
         # semantics (8.5.1)
         if prop in ('regwidth', 'accesswidth') and ( not is_power_2(value) or value < 8 ):
             exit('Error: Property \'{}\' should be a power of two and >= 8.'.format(prop))
-        if self.accesswidth > self.regwidth:
-            exit('Error: \'accesswidth\' should not exceed \'regwidth\'.')
+        if (prop in ('at_addr', 'inc_addr', 'align_addr')
+                and self.parent.get_type() != 'RegFile'):
+            exit('error: address allocation is valid only for reg/regfiles inside regfile')
+        super().set_property(prop, value, user_def_props, is_dynamic)
+        # if self.accesswidth > self.regwidth:
+        #     exit('Error: \'accesswidth\' should not exceed \'regwidth\'.')
 
 class Field(Component):
 
@@ -326,12 +340,12 @@ class Field(Component):
         self.size = None
 
     def set_property(self, prop, value, user_def_props, is_dynamic=False):
+        if prop == 'reset' and isinstance(value, int) and value != 0:
+            exit('Error: Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
         super().set_property(prop, value, user_def_props, is_dynamic)
         invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')] # check after completion??
         if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:                 # (Table 9)
             exit('Error: Invalid field access pair.')
-        if prop == 'reset' and isinstance(value, int) and value != 0:
-            exit('Error: Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
 
 class Signal(Component):
 

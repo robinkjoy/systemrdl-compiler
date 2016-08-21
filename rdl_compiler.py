@@ -16,7 +16,7 @@ def main(argv):
     #print(visitor.visit(tree))
     walker = ParseTreeWalker()
     walker.walk(listener, tree)
-    #listener.addrmaps[0].pprint()
+    listener.addrmaps[0].pprint()
 
 if __name__ == '__main__':
     main(sys.argv)

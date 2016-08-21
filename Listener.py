@@ -12,7 +12,7 @@ def extract_num(string):
     string = re.split('\'([bodh])', string, 1, flags=re.IGNORECASE)
     if string[2][0] == '_':
         exit('error: first position of value should not be \'_\'.')
-    base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1][1].to_lower()]
+    base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1].lower()]
     return (int(string[0]), int(string[2].translate({ord('_'): None}), base))
 
 
@@ -70,6 +70,18 @@ class Listener(SystemRDLListener):
             if definition:
                 return definition[0]
         return None
+
+    def get_post_inst_prop_value(self, ctx, prop):
+        prop_token = {'reset': ('EQ', '='),
+                      'at_addr': ('AT', '@'),
+                      'inc_addr': ('INC', '+='),
+                      'align_addr': ('MOD', '%=')}
+        tok_method = getattr(ctx, prop_token[prop][0])
+        if tok_method() is None:
+            return None
+        for i, tok in enumerate(ctx.children):
+            if tok.getText() == prop_token[prop][1]:
+                return extract_num(ctx.children[i+1].getText())
 
     # Enter a parse tree produced by SystemRDLParser#root.
     def enterRoot(self, ctx:SystemRDLParser.RootContext):
@@ -251,10 +263,6 @@ class Listener(SystemRDLListener):
                 else:
                     inst = [comp.customcopy() for i in range(size)]
         inst_id = ctx.getChild(0).getText()
-        #print(dir(ctx.getToken(SystemRDLParser.EQ, 0)))
-        for child in ctx.children:
-            if child.getText() == '=':
-                print(child.getText())
         if isinstance(inst, list):
             for x in inst:
                 setattr(x, 'inst_id', inst_id)
@@ -262,6 +270,10 @@ class Listener(SystemRDLListener):
         else:
             inst.inst_id = inst_id
             inst.parent = parent
+        for prop in ['reset', 'at_addr', 'inc_addr', 'align_addr']:
+            value = self.get_post_inst_prop_value(ctx, prop)
+            if value is not None:
+                inst.set_property(prop, value, []) 
         # if in root, component is signal
         if parent is None:
             self.add_root_sig_inst(inst)

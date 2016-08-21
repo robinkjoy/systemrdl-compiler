@@ -4,6 +4,12 @@ from copy import deepcopy
 def is_power_2(number):
     return number > 0 and (number & (number - 1)) == 0
 
+def true_or_assigned(val):
+    if val is None or val == '' or (isinstance(val, bool) and not val):
+        return 0
+    else:
+        return 1
+
 
 class Component:
 
@@ -121,11 +127,6 @@ class Component:
         return value
 
     def validate_exclusivity(self):
-        def true_or_assigned(val):
-            if val is None or (isinstance(val, bool) and not val):
-                return 0
-            else:
-                return 1
         for exs in self.EXCLUSIVES:
             if sum(map(true_or_assigned, [getattr(self, ex) for ex in exs])) > 1:
                 exit('Error: Properties {} should be exclusive in {}'.format(', '.join(exs),
@@ -167,7 +168,10 @@ class Component:
         print(' '*level*indent+'{} {} {} {{'.format(self.get_type(), self.def_id, self.inst_id))
         max_len = len(max(self.PROPERTIES, key=len))
         for prop in self.PROPERTIES:
-            print('{}{}{:{}} = {}'.format(' '*level*indent, ' '*indent, prop, max_len, getattr(self, prop)))
+            value = getattr(self, prop)
+            if not true_or_assigned(value):
+                continue
+            print('{}{}{:{}} = {}'.format(' '*level*indent, ' '*indent, prop, max_len, value))
         for comp in self.comps:
             if isinstance(comp, list):
                 print(' '*(level+1)*indent+'[')

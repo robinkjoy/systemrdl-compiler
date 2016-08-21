@@ -154,7 +154,7 @@ explicit_property_assign
     s_property
 
   | s_property
-    ( EQ property_assign_rhs )
+    ( EQ property_assign_rhs )?
   ;
 
 post_property_assign

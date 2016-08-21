@@ -7,6 +7,7 @@ addrmap am1 {
       field {
         name = "data_field";
         desc = "Data read/write field";
+        rclr;
         sw = rw;
         hw = r;
         reset = 32'd2;

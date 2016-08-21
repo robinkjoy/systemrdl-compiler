@@ -1,28 +1,6 @@
 /*
-Copyright 2009 The SPIRIT Consortium.
-
-This work forms part of a deliverable of The SPIRIT Consortium.
-
-Use of these materials are governed by the legal terms and conditions
-outlined in the disclaimer available from www.spiritconsortium.org.
-
-This source file is provided on an AS IS basis.  The SPIRIT
-Consortium disclaims any warranty express or implied including
-any warranty of merchantability and fitness for use for a
-particular purpose.
-
-The user of the source file shall indemnify and hold The SPIRIT
-Consortium and its members harmless from any damages or liability.
-Users are requested to provide feedback to The SPIRIT Consortium
-using either mailto:feedback@lists.spiritconsortium.org or the forms at
-http://www.spiritconsortium.org/about/contact_us/
-
-This file may be copied, and distributed, WITHOUT
-modifications; this notice must be included on any copy.
-The following code is derived, directly or indirectly, from
-source code (C) COPYRIGHT 2009 Denali Software Inc. and is used by
-permission under the terms described above.
-
+The following code is an extension of the SystemRDL 1.0 grammar provided for use by Accellera under Apache 2.0 license.  
+See http://accellera.org/downloads/standards/systemrdl for additional info.
 */
 
 grammar SystemRDL;

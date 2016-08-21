@@ -159,7 +159,7 @@ explicit_property_assign
 
 post_property_assign
   : instance_ref
-    ( EQ property_assign_rhs )
+    ( EQ property_assign_rhs )?
   ;
 
 property_assign_rhs

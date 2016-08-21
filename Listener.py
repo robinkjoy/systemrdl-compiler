@@ -266,9 +266,13 @@ class Listener(SystemRDLListener):
         if isinstance(inst, list):
             for x in inst:
                 setattr(x, 'inst_id', inst_id)
+                if x.name is None:
+                    x.name = inst_id
                 setattr(x, 'parent', parent)
         else:
             inst.inst_id = inst_id
+            if inst.name is None:
+                inst.name = inst_id
             inst.parent = parent
         for prop in ['reset', 'at_addr', 'inc_addr', 'align_addr']:
             value = self.get_post_inst_prop_value(ctx, prop)

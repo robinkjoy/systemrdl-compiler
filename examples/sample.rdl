@@ -1,5 +1,6 @@
 property user_prop1 { type = string; component = field|reg; default = "hi";};
 addrmap am1 {
+  default encode = enum {on = 1'b1; off = 1'b0 { name = "Off";};};
   name = "addrmap";
   regfile {
     reg {

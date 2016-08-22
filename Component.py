@@ -1,11 +1,11 @@
-from copy import deepcopy
+from copy import copy
 
 
 def is_power_2(number):
     return number > 0 and (number & (number - 1)) == 0
 
 def true_or_assigned(val):
-    if val is None or val == '' or (isinstance(val, bool) and not val):
+    if val is None or val == '""' or (isinstance(val, bool) and not val):
         return 0
     else:
         return 1
@@ -17,33 +17,40 @@ class Component:
         'name': 'string',
         'desc': 'string'
         }
-    PROPERTIES = {}
     NON_DYNAMIC_PROPERTIES = []
     EXCLUSIVES = [[]]
 
-    def __init__(self, def_id, inst_id, parent):
+    def __init__(self, def_id, inst_id, parent, defaults):
         self.def_id = def_id
         self.inst_id = inst_id
-        self.name = inst_id
         self.parent = parent
-        self.desc = ''
         self.comps = []
-        for prop in self.PROPERTIES:
-            setattr(self, prop, self.get_default(prop))
-        self.PROPERTIES.update(self.UNIVERSAL_PROPERTIES)
+        self.properties.update(self.UNIVERSAL_PROPERTIES)
+        for prop in self.properties:
+            setattr(self, prop, self.get_default(prop, defaults))
 
     def get_type(self):
         return self.__class__.__name__
 
     def set_property(self, prop, value, user_def_props, is_dynamic):
-        value = self.validate_property(prop, value, user_def_props, is_dynamic)
+        self.validate_property(prop, value, user_def_props, is_dynamic)
         setattr(self, prop, value)
         self.validate_exclusivity()
 
-    def get_default(self, prop):
+    def get_default(self, prop, defaults):
+        def get_default_value(prop, defaults):
+            for defs in reversed(defaults):
+                if prop in defs:
+                    return defs[prop]
+            return None
+        value = get_default_value(prop, defaults)
+        if value is not None:
+            return value
+        if prop == 'name':
+            return self.inst_id
         prop_default = {
             'boolean': False,
-            'string': '',
+            'string': '""',
             'numeric': None,
             'sizedNumeric': None,
             'unsizedNumeric': None,
@@ -53,19 +60,20 @@ class Component:
             'reference': None,
             'reference2enum': None
             }
-        prop_type = self.PROPERTIES[prop]
+        prop_type = self.properties[prop]
         if isinstance(prop_type, list):
             prop_type = prop_type[0]
         return prop_default[prop_type]
 
     def check_type(self, prop, value):
-        prop_types = self.PROPERTIES[prop]
+        prop_types = self.properties[prop]
         if isinstance(prop_types, str):
             prop_types = [prop_types]
         for prop_type in prop_types:
             if prop_type == 'boolean' and isinstance(value, bool):
                 return True
-            elif prop_type == 'string' and isinstance(value, str):
+            elif (prop_type == 'string' and isinstance(value, str)
+                    and len(value) > 1 and value[0] == '"' and value[-1] == '"'):
                 return True
             elif prop_type in ('numeric', 'unsizedNumeric') and isinstance(value, int):
                 return True
@@ -77,18 +85,18 @@ class Component:
                 return True
             elif prop_type == 'precedenceType' and value in ('sw', 'hw'):
                 return True
-            elif prop_type == 'reference':
-                # not implemented
-                print('reference properties not implemented')
+            elif prop_type == 'reference' and isinstance(value, Component):
+                return True
+            elif prop_type == 'reference2enum' and isinstance(value, Enum):
                 return True
         return False
 
     def validate_property(self, prop, value, user_def_props, is_dynamic):
-        if prop in self.PROPERTIES:
+        if prop in self.properties:
             if is_dynamic and prop in self.NON_DYNAMIC_PROPERTIES:
                 exit('Error: Property \'{}\' cannot be assigned dynamically.'.format(prop))
             if not self.check_type(prop, value):
-                exit('Error: Property \'{}\' expected {}.'.format(prop, self.PROPERTIES[prop]))
+                exit('Error: Property \'{}\' expected {}.'.format(prop, self.properties[prop]))
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -96,16 +104,15 @@ class Component:
                 'boolean': 'boolean',
                 'ref': 'reference'
                 }
-            user_def_prop = [x for x in user_def_props if x.def_id == prop]
+            user_def_prop = [x for x in user_def_props if x.prop_id == prop]
             if not user_def_prop:
                 exit('Error: Property \'{}\' not defined for {}.'.format(prop, self.get_type()))
             else:
-                self.PROPERTIES[prop] = user_def_prop_type[user_def_prop[0].proptype]
+                self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]
                 if value is None:
-                    value = user_def_prop[0].default
+                    value = user_def_prop.prop_default
                 elif not self.check_type(prop, value):
-                    exit('Error: Property \'{}\' expected {}.'.format(prop, self.PROPERTIES[prop]))
-        return value
+                    exit('Error: Property \'{}\' expected {}.'.format(prop, self.properties[prop]))
 
     def validate_exclusivity(self):
         for exs in self.EXCLUSIVES:
@@ -114,13 +121,13 @@ class Component:
                                                                             self.get_type()))
 
     def customcopy(self):
-        # don't copy references to other components, except child Components
-        memo = {id(self.parent): self.parent}
-        for prop in self.PROPERTIES:
-            prop_value = getattr(self, prop)
-            if isinstance(prop_value, Component):
-                memo.update({id(prop_value): prop_value})
-        return deepcopy(self, memo)
+        if isinstance(self, Signal) or isinstance(self, Enum):
+            return self
+        newcopy = copy(self)
+        def copy_method(x):
+            return [y.customcopy() for y in x] if isinstance(x, list) else x.customcopy()
+        newcopy.comps = [copy_method(x) for x in self.comps]
+        return newcopy
 
     def add_comp(self, inst):
         allowed_insts = {
@@ -147,8 +154,8 @@ class Component:
     def pprint(self, level=0):
         indent = 4
         print(' '*level*indent+'{} {} {} {{'.format(self.get_type(), self.def_id, self.inst_id))
-        max_len = len(max(self.PROPERTIES, key=len))
-        for prop in self.PROPERTIES:
+        max_len = len(max(self.properties, key=len))
+        for prop in self.properties:
             value = getattr(self, prop)
             if not true_or_assigned(value):
                 continue
@@ -165,145 +172,93 @@ class Component:
 
 class AddrMap(Component):
 
-    PROPERTIES = {
-        'alignment': 'unsizedNumeric',
-        'sharedextbus': 'boolean',
-        'bigendian': 'boolean',
-        'littleendian': 'boolean',
-        'addressing': 'addressingType',
-        'rsvdset': 'boolean',
-        'rsvdsetX': 'boolean',
-        'msb0': 'boolean',
-        'lsb0': 'boolean',
-        'bridge': 'boolean',
-        'arbiter': 'string'
-        }
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus', 'addressing',
             'rsvdset', 'rsvdsetX', 'msb0', 'lsb0', 'bridge', 'arbiter']
     EXCLUSIVES = [['msb0', 'lsb0']] # (10.3.1.g)
 
-    def __init__(self, def_id, inst_id, parent):
-        super().__init__(def_id, inst_id, parent)
+    def __init__(self, def_id, inst_id, parent, defaults):
+        self.properties = {
+            'alignment': 'unsizedNumeric',
+            'sharedextbus': 'boolean',
+            'bigendian': 'boolean',
+            'littleendian': 'boolean',
+            'addressing': 'addressingType',
+            'rsvdset': 'boolean',
+            'rsvdsetX': 'boolean',
+            'msb0': 'boolean',
+            'lsb0': 'boolean',
+            'bridge': 'boolean',
+            'arbiter': 'string'
+            }
+        super().__init__(def_id, inst_id, parent, defaults)
         self.instantiated = False
 
-    def set_property(self, prop, value, user_def_props, is_dynamic=False):
-        super().set_property(prop, value, user_def_props, is_dynamic)
+    def check_type(self, prop, value):
+        if not super().check_type(prop, value):
+            return False
         # semantics (10.3.1)
         if prop == 'alignment' and not is_power_2(value):
             exit('Error: Property \'alignment\' should be a power of two.')
+        return True
 
 class RegFile(Component):
 
-    PROPERTIES = {
-        'alignment': 'unsizedNumeric',
-        'sharedextbus': 'boolean',
-        # Instance properties
-        'at_addr': 'unsizedNumeric',
-        'inc_addr': 'unsizedNumeric',
-        'align_addr': 'unsizedNumeric'
-        }
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus']
     EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
 
-    def set_property(self, prop, value, user_def_props, is_dynamic=False):
-        super().set_property(prop, value, user_def_props, is_dynamic)
+    def __init__(self, def_id, inst_id, parent, defaults):
+        self.properties = {
+            'alignment': 'unsizedNumeric',
+            'sharedextbus': 'boolean',
+            # Instance properties
+            'at_addr': 'unsizedNumeric',
+            'inc_addr': 'unsizedNumeric',
+            'align_addr': 'unsizedNumeric'
+            }
+        super().__init__(def_id, inst_id, parent, defaults)
+
+
+    def check_type(self, prop, value):
+        if not super().check_type(prop, value):
+            return False
         # semantics (9.1.1)
         if prop == 'alignment' and not is_power_2(value):
             exit('Error: Property \'alignment\' should be a power of two.')
+        return True
 
 class Register(Component):
 
-    PROPERTIES = {
-        'regwidth': 'numeric',
-        'accesswidth': 'numeric',
-        'errextbus': 'numeric',
-        'intr': 'reference',
-        'halt': 'reference',
-        'shared': 'boolean',
-        # Instance properties
-        'at_addr': 'unsizedNumeric',
-        'inc_addr': 'unsizedNumeric',
-        'align_addr': 'unsizedNumeric'
-        }
     NON_DYNAMIC_PROPERTIES = ['regwidth', 'shared']
     EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
 
-    def set_property(self, prop, value, user_def_props, is_dynamic=False):
+    def __init__(self, def_id, inst_id, parent, defaults):
+        self.properties = {
+            'regwidth': 'numeric',
+            'accesswidth': 'numeric',
+            'errextbus': 'numeric',
+            'intr': 'reference',
+            'halt': 'reference',
+            'shared': 'boolean',
+            # Instance properties
+            'at_addr': 'unsizedNumeric',
+            'inc_addr': 'unsizedNumeric',
+            'align_addr': 'unsizedNumeric'
+            }
+        super().__init__(def_id, inst_id, parent, defaults)
+
+    def check_type(self, prop, value):
+        if not super().check_type(prop, value):
+            return False
         # semantics (8.5.1)
         if prop in ('regwidth', 'accesswidth') and ( not is_power_2(value) or value < 8 ):
             exit('Error: Property \'{}\' should be a power of two and >= 8.'.format(prop))
         if (prop in ('at_addr', 'inc_addr', 'align_addr')
                 and self.parent.get_type() != 'RegFile'):
             exit('error: address allocation is valid only for reg/regfiles inside regfile')
-        super().set_property(prop, value, user_def_props, is_dynamic)
-        # if self.accesswidth > self.regwidth:
-        #     exit('Error: \'accesswidth\' should not exceed \'regwidth\'.')
+        return True
 
 class Field(Component):
 
-    PROPERTIES = {
-        # Field access properties
-        'hw': 'accessType',
-        'sw': 'accessType',
-        # Hardware signal properties
-        'next': 'reference',
-        'reset': ['numeric', 'sizedNumeric', 'reference'],
-        'resetsignal': 'reference',
-        # Software access properties
-        'rclr': 'boolean',
-        'rset': 'boolean',
-        'woset': 'boolean',
-        'woclr': 'boolean',
-        'swwe': ['boolean', 'reference'],
-        'swwel': ['boolean', 'reference'],
-        'swmod': ['boolean', 'reference'],
-        'swacc': ['boolean', 'reference'],
-        'singlepulse': 'boolean',
-        # Hardware access properties
-        'we': ['boolean', 'reference'],
-        'wel': ['boolean', 'reference'],
-        'anded': ['boolean', 'reference'],
-        'ored': ['boolean', 'reference'],
-        'xored': ['boolean', 'reference'],
-        'fieldwidth': 'numeric',
-        'hwclr': 'boolean',
-        'hwset': 'boolean',
-        'hwenable': 'sizedNumeric',
-        'hwmask': 'sizedNumeric',
-        # Counter field properties
-        'counter': 'boolean',
-        'threshold': ['boolean', 'reference'],
-        'saturate': ['boolean', 'reference'],
-        'incrthreshold': ['boolean', 'reference'],
-        'incrsaturate': ['boolean', 'reference'],
-        'overflow': 'reference',
-        'underflow': 'reference',
-        'incrvalue': ['boolean', 'reference'],
-        'incr': 'reference',
-        'incrwidth': 'numeric',
-        'decrvalue': ['boolean', 'reference'],
-        'decr': 'reference',
-        'decrwidth': 'numeric',
-        'decrthreshold': ['boolean', 'reference'],
-        'decrsaturate': ['boolean', 'reference'],
-        # Interrupt types
-        'posedge': 'boolean',
-        'negedge': 'boolean',
-        'bothedge': 'boolean',
-        'level': 'boolean',
-        'nonsticky': 'boolean',
-        # Field access interrupt properties
-        'intr': 'boolean',
-        'enable': 'reference',
-        'mask': 'reference',
-        'haltenable': 'reference',
-        'haltmask': 'reference',
-        'sticky': 'boolean',
-        'stickybit': 'boolean',
-        # Miscellaneous properties
-        'encode': 'reference2enum',
-        'precedence': 'precedenceType'
-        }
     NON_DYNAMIC_PROPERTIES = ['hw', 'fieldwidth']
     EXCLUSIVES = [
         ['rclr', 'rset'],
@@ -319,52 +274,117 @@ class Field(Component):
         ['posedge', 'negedge', 'bothedge', 'level'] # (7.9.1.g)
         ]
 
-    def __init__(self, def_id, inst_id, parent):
-        super().__init__(def_id, inst_id, parent)
+    def __init__(self, def_id, inst_id, parent, defaults):
+        self.properties = {
+            # Field access properties
+            'hw': 'accessType',
+            'sw': 'accessType',
+            # Hardware signal properties
+            'next': 'reference',
+            'reset': ['numeric', 'sizedNumeric', 'reference'],
+            'resetsignal': 'reference',
+            # Software access properties
+            'rclr': 'boolean',
+            'rset': 'boolean',
+            'woset': 'boolean',
+            'woclr': 'boolean',
+            'swwe': ['boolean', 'reference'],
+            'swwel': ['boolean', 'reference'],
+            'swmod': ['boolean', 'reference'],
+            'swacc': ['boolean', 'reference'],
+            'singlepulse': 'boolean',
+            # Hardware access properties
+            'we': ['boolean', 'reference'],
+            'wel': ['boolean', 'reference'],
+            'anded': ['boolean', 'reference'],
+            'ored': ['boolean', 'reference'],
+            'xored': ['boolean', 'reference'],
+            'fieldwidth': 'numeric',
+            'hwclr': 'boolean',
+            'hwset': 'boolean',
+            'hwenable': 'sizedNumeric',
+            'hwmask': 'sizedNumeric',
+            # Counter field properties
+            'counter': 'boolean',
+            'threshold': ['boolean', 'reference'],
+            'saturate': ['boolean', 'reference'],
+            'incrthreshold': ['boolean', 'reference'],
+            'incrsaturate': ['boolean', 'reference'],
+            'overflow': 'reference',
+            'underflow': 'reference',
+            'incrvalue': ['boolean', 'reference'],
+            'incr': 'reference',
+            'incrwidth': 'numeric',
+            'decrvalue': ['boolean', 'reference'],
+            'decr': 'reference',
+            'decrwidth': 'numeric',
+            'decrthreshold': ['boolean', 'reference'],
+            'decrsaturate': ['boolean', 'reference'],
+            # Interrupt types
+            'posedge': 'boolean',
+            'negedge': 'boolean',
+            'bothedge': 'boolean',
+            'level': 'boolean',
+            'nonsticky': 'boolean',
+            # Field access interrupt properties
+            'intr': 'boolean',
+            'enable': 'reference',
+            'mask': 'reference',
+            'haltenable': 'reference',
+            'haltmask': 'reference',
+            'sticky': 'boolean',
+            'stickybit': 'boolean',
+            # Miscellaneous properties
+            'encode': 'reference2enum',
+            'precedence': 'precedenceType'
+            }
+        super().__init__(def_id, inst_id, parent, defaults)
         self.position = (None, None)
         self.size = None
 
-    def set_property(self, prop, value, user_def_props, is_dynamic=False):
+    def check_type(self, prop, value):
+        if not super().check_type(prop, value):
+            return False
         if prop == 'reset' and isinstance(value, int) and value != 0:
             exit('Error: Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
-        super().set_property(prop, value, user_def_props, is_dynamic)
-        invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')] # check after completion??
-        if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:                 # (Table 9)
-            exit('Error: Invalid field access pair.')
+        return True
+        # invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')] # check after completion??
+        # if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:                 # (Table 9)
+        #     exit('Error: Invalid field access pair.')
 
 class Signal(Component):
 
-    PROPERTIES = {
-        'signalwidth': 'numeric',
-        'sync': 'boolean',
-        'async': 'boolean',
-        'cpuif_reset': 'boolean',
-        'field_reset': 'boolean',
-        'activelow': 'boolean',
-        'activehigh': 'boolean'
-        }
     NON_DYNAMIC_PROPERTIES = ['signalwidth']
     EXCLUSIVES = [['sync', 'async'], ['activehigh', 'activelow']]
 
-    def __init__(self, def_id, inst_id, parent):
-        super().__init__(def_id, inst_id, parent)
+    def __init__(self, def_id, inst_id, parent, defaults):
+        self.properties = {
+            'signalwidth': 'numeric',
+            'sync': 'boolean',
+            'async': 'boolean',
+            'cpuif_reset': 'boolean',
+            'field_reset': 'boolean',
+            'activelow': 'boolean',
+            'activehigh': 'boolean'
+            }
+        super().__init__(def_id, inst_id, parent, defaults)
         self.size = None
 
 class Enum(Component):
 
     def __init__(self, def_id):
-        super().__init__(def_id, None, None)
+        self.properties = {}
+        super().__init__(def_id, None, None, [])
 
     def set_property(self, prop, value):
         super().set_property(prop, value, [], False)
 
 class EnumEntry(Component):
 
-    PROPERTIES = {'value': 'sizedNumeric'}
-
-    def __init__(self, def_id, parent):
-        super().__init__(def_id, None, parent)
-        self.value = None
+    def __init__(self, def_id, value):
+        self.properties = {}
+        super().__init__(def_id, None, None, [])
+        self.value = value
 
     def set_property(self, prop, value):
         super().set_property(prop, value, [], False)

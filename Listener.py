@@ -33,6 +33,7 @@ class Listener(SystemRDLListener):
         self.definitions = [[]]
         self.user_def_props = []
         self.root_sig_insts = []
+        self.defaults = [{}]
 
     def add_definition(self, definition):
         allowed_defs = {
@@ -53,11 +54,6 @@ class Listener(SystemRDLListener):
             exit('error: all definition names should be unique within a scope')
         self.definitions[-1].append(definition)
 
-    def add_root_sig_inst(self, inst):
-        if any([x for x in self.root_sig_insts if x.inst_id == inst.inst_id]):
-            exit('error: all instance names should be unique within a scope')
-        self.root_sig_insts.append(inst)
-
     def push_definitions(self):
         self.definitions.append([])
 
@@ -71,6 +67,28 @@ class Listener(SystemRDLListener):
                 return definition[0]
         return None
 
+    def add_root_sig_inst(self, inst):
+        if any([x for x in self.root_sig_insts if x.inst_id == inst.inst_id]):
+            exit('error: all instance names should be unique within a scope')
+        self.root_sig_insts.append(inst)
+
+    def add_default(self, default):
+        if default[0] in self.defaults[-1]:
+            exit('error: defaults can be assigned only once per scope.')
+        self.defaults[-1].update({default[0]: default[1]})
+
+    def push_defaults(self):
+        self.defaults.append({})
+
+    def pop_defaults(self):
+        self.defaults.pop()
+
+    def get_default_value(self, prop):
+        for defs in reversed(self.defaults):
+            if prop in defs:
+                return defs[prop]
+        return None
+
     def get_post_inst_prop_value(self, ctx, prop):
         prop_token = {'reset': ('EQ', '='),
                       'at_addr': ('AT', '@'),
@@ -82,6 +100,87 @@ class Listener(SystemRDLListener):
         for i, tok in enumerate(ctx.children):
             if tok.getText() == prop_token[prop][1]:
                 return extract_num(ctx.children[i+1].getText())
+
+    def extract_rhs_value(self, ctx):
+        if ctx.property_rvalue_constant() is not None:
+            value_str = ctx.getText()
+            childctx = ctx.getChild(0)
+            if childctx.num() is not None:
+                return extract_num(value_str)
+            elif value_str == 'true':
+                return True
+            elif value_str == 'false':
+                return False
+            else:
+                return value_str
+        elif ctx.enum_body() is not None:
+            return self.extract_enum_body(ctx.getChild(1), Component.Enum(None))
+        elif ctx.instance_ref() is not None:
+            pass
+        elif ctx.concat() is not None:
+            exit('error:{}: concat not implemented.',format(ctx.start.line))
+
+    def extract_enum_body(self, ctx, enum):
+        if len(ctx.enum_entry()) == 0:
+            exit('error:{}: no entries in enum.'.format(ctx.start.line))
+        for entryctx in ctx.children:
+            if not isinstance(entryctx, SystemRDLParser.Enum_entryContext):
+                continue
+            name = entryctx.getChild(0).getText()
+            value = extract_num(entryctx.getChild(2).getText())
+            if not isinstance(value, tuple):
+                exit('error:{}: enum entry value should be sizedNumeric'.format(entryctx.start.line))
+            if any([x for x in enum.comps if x.def_id == name]):
+                exit('error:{}: {} already defined in enum.'.format(entryctx.start.line, name))
+            if len(enum.comps) != 0 and value[0] != enum.comps[0].value[0]:
+                exit('error:{}: size does not match others.'.format(entryctx.start.line))
+            if any([x for x in enum.comps if x.value == value]):
+                exit('error:{}: {} already defined in enum.'.format(entryctx.start.line, entryctx.getChild(2).getText()))
+            entry = Component.EnumEntry(name, value)
+            for propctx in entryctx.children:
+                if not isinstance(propctx, SystemRDLParser.Enum_property_assignContext):
+                    continue
+                setattr(entry, propctx.getChild(0).getText(), propctx.getChild(2).getText())
+            enum.comps.append(entry)
+        return enum
+
+    # Enter a parse tree produced by SystemRDLParser#root.
+    def enterRoot(self, ctx:SystemRDLParser.RootContext):
+        pass
+
+    # Exit a parse tree produced by SystemRDLParser#root.
+    def exitRoot(self, ctx:SystemRDLParser.RootContext):
+        # addrmaps defined but not instantiated
+        self.addrmaps = [x for x in self.definitions[0] if isinstance(x, Component.AddrMap) and not x.instantiated]
+
+    # Enter a parse tree produced by SystemRDLParser#property_definition.
+    def enterProperty_definition(self, ctx:SystemRDLParser.Property_definitionContext):
+        pass
+
+    # Exit a parse tree produced by SystemRDLParser#property_definition.
+    def exitProperty_definition(self, ctx:SystemRDLParser.Property_definitionContext):
+        pass
+
+
+
+    # Enter a parse tree produced by SystemRDLParser#root.
+    def enterRoot(self, ctx:SystemRDLParser.RootContext):
+        pass
+
+    # Exit a parse tree produced by SystemRDLParser#root.
+    def exitRoot(self, ctx:SystemRDLParser.RootContext):
+        # addrmaps defined but not instantiated
+        self.addrmaps = [x for x in self.definitions[0] if isinstance(x, Component.AddrMap) and not x.instantiated]
+
+    # Enter a parse tree produced by SystemRDLParser#property_definition.
+    def enterProperty_definition(self, ctx:SystemRDLParser.Property_definitionContext):
+        pass
+
+    # Exit a parse tree produced by SystemRDLParser#property_definition.
+    def exitProperty_definition(self, ctx:SystemRDLParser.Property_definitionContext):
+        pass
+
+
 
     # Enter a parse tree produced by SystemRDLParser#root.
     def enterRoot(self, ctx:SystemRDLParser.RootContext):
@@ -222,13 +321,14 @@ class Listener(SystemRDLListener):
         if ctx.getChild(1).getText() == '{':
             if self.curr_comp is None and comp_type != 'signal':            # (5.1.4)
                 exit('error:{}: {} should not be instantiated in root scope.'.format(ctx.start.line, comp_type))
-            comp = self.COMPONENT_CLASS[comp_type](None, None, self.curr_comp)
+            comp = self.COMPONENT_CLASS[comp_type](None, None, self.curr_comp, self.defaults)
         # definition
         else:
-            comp = self.COMPONENT_CLASS[comp_type](ctx.getChild(1).getText(), None, self.curr_comp)
+            comp = self.COMPONENT_CLASS[comp_type](ctx.getChild(1).getText(), None, self.curr_comp, self.defaults)
             self.add_definition(comp)
         self.curr_comp = comp
         self.push_definitions()
+        self.push_defaults()
 
     # Exit a parse tree produced by SystemRDLParser#component_def.
     def exitComponent_def(self, ctx:SystemRDLParser.Component_defContext):
@@ -236,6 +336,7 @@ class Listener(SystemRDLListener):
             exit('error:{}: definition name or instatiation name not specified.'.format(ctx.start.line))
         self.curr_comp = self.curr_comp.parent
         self.pop_definitions()
+        self.pop_defaults()
 
 
     # Enter a parse tree produced by SystemRDLParser#explicit_component_inst.
@@ -310,7 +411,7 @@ class Listener(SystemRDLListener):
         for prop in ['reset', 'at_addr', 'inc_addr', 'align_addr']:
             value = self.get_post_inst_prop_value(ctx, prop)
             if value is not None:
-                inst.set_property(prop, value, []) 
+                inst.set_property(prop, value, [], None) 
         # if in root, component is signal
         if parent is None:
             self.add_root_sig_inst(inst)
@@ -369,7 +470,34 @@ class Listener(SystemRDLListener):
 
     # Enter a parse tree produced by SystemRDLParser#explicit_property_assign.
     def enterExplicit_property_assign(self, ctx:SystemRDLParser.Explicit_property_assignContext):
-        pass
+        if self.rule_names[ctx.parentCtx.getRuleIndex()] == 'default_property_assign':
+            if ctx.property_modifier():
+                exit('error:{}: syntax error'.format(ctx.start.line))
+            prop = ctx.getChild(0).getText()
+            if prop in ('name', 'desc'):
+                if (ctx.property_assign_rhs() is None
+                        or ctx.getChild(2).property_rvalue_constant() is None
+                        or ctx.getChild(2).getChild(0).string() is None):
+                    exit('error:{}: {} expected string value.'.format(ctx.start.line, prop))
+                value = ctx.getChild(2).getText()
+            else:
+                def prop_class(prop):
+                    for key, cls in self.COMPONENT_CLASS.items():
+                        if prop in cls(None, None, [], []).properties:
+                            return cls(None, None, [], [])
+                    return None
+                cls = prop_class(prop)
+                if cls is None:
+                    exit('error:{}: {} is not a builtin property.'.format(ctx.start.line, prop))
+                if ctx.property_assign_rhs() is None:
+                    value = True
+                else:
+                    value = self.extract_rhs_value(ctx.getChild(0, SystemRDLParser.Property_assign_rhsContext))
+                if not cls.check_type(prop, value):
+                    exit('error:{}: {} expected {}.'.format(ctx.start.line, prop, cls.properties[prop]))
+            self.add_default((prop, value))
+        else:
+            pass
 
     # Exit a parse tree produced by SystemRDLParser#explicit_property_assign.
     def exitExplicit_property_assign(self, ctx:SystemRDLParser.Explicit_property_assignContext):

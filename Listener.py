@@ -83,12 +83,6 @@ class Listener(SystemRDLListener):
     def pop_defaults(self):
         self.defaults.pop()
 
-    def get_default_value(self, prop):
-        for defs in reversed(self.defaults):
-            if prop in defs:
-                return defs[prop]
-        return None
-
     def get_post_inst_prop_value(self, ctx, prop):
         prop_token = {'reset': ('EQ', '='),
                       'at_addr': ('AT', '@'),
@@ -172,6 +166,12 @@ class Listener(SystemRDLListener):
                 prop = elemctx.getChild(0).getText()
         return (inst, prop) if prop is not None else inst
 
+    def get_implicit_value(self, inst, prop, ctx):
+        if ctx.s_id() is None:      # not user defined property
+            return True
+        else:
+            return None
+
     # Enter a parse tree produced by SystemRDLParser#root.
     def enterRoot(self, ctx:SystemRDLParser.RootContext):
         pass
@@ -247,22 +247,25 @@ class Listener(SystemRDLListener):
                 prop_usage.append(childctx.getText())
         if len(ctx.property_default()) > 1:
             exit('error:{}: property default reassigned'.format(ctx.start.line))
-        prop_default_ctx = ctx.getChild(0, SystemRDLParser.Property_defaultContext)
-        prop_default_str = prop_default_ctx.getChild(2).getText()
-        if prop_default_ctx.string() is not None:
-            if prop_type != 'string':
-                exit('error:{}: default does not match type.'.format(ctx.start.line))
-            prop_default = prop_default_str
-        elif prop_default_ctx.num() is not None:
-            if prop_type != 'number':
-                exit('error:{}: default does not match type.'.format(ctx.start.line))
-            prop_default = extract_num(prop_default_str)
-            if not isinstance(prop_default, int):
-                exit('error:{}: default value cannot be sizedNumeric.'.format(ctx.start.line))
+        if not ctx.property_default():
+            prop_default = None
         else:
-            if prop_type != 'boolean':
-                exit('error:{}: default does not match type.'.format(ctx.start.line))
-            prop_default = True if prop_default_str == 'true' else False
+            prop_default_ctx = ctx.getChild(0, SystemRDLParser.Property_defaultContext)
+            prop_default_str = prop_default_ctx.getChild(2).getText()
+            if prop_default_ctx.string() is not None:
+                if prop_type != 'string':
+                    exit('error:{}: default does not match type.'.format(ctx.start.line))
+                prop_default = prop_default_str
+            elif prop_default_ctx.num() is not None:
+                if prop_type != 'number':
+                    exit('error:{}: default does not match type.'.format(ctx.start.line))
+                prop_default = extract_num(prop_default_str)
+                if not isinstance(prop_default, int):
+                    exit('error:{}: default value cannot be sizedNumeric.'.format(ctx.start.line))
+            else:
+                if prop_type != 'boolean':
+                    exit('error:{}: default does not match type.'.format(ctx.start.line))
+                prop_default = True if prop_default_str == 'true' else False
         self.user_def_props.append(Component.Property(prop_id, prop_type, prop_usage, prop_default))
 
     # Exit a parse tree produced by SystemRDLParser#property_body.
@@ -533,7 +536,7 @@ class Listener(SystemRDLListener):
             else:
                 prop = ctx.getChild(0).getText()
                 if ctx.property_assign_rhs() is None:
-                    value = True
+                    value = self.get_implicit_value(self.curr_comp, prop, ctx.getChild(0))
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2))
                 self.curr_comp.set_property(prop, value, self.user_def_props, False)
@@ -550,7 +553,7 @@ class Listener(SystemRDLListener):
             exit('error:{}: property is not specified.'.format(ctx.start.line))
         (inst, prop) = inst_prop
         if ctx.property_assign_rhs() is None:
-            value = True
+            value = self.get_implicit_value(inst, prop, ctx.getChild(0).getChild(0, SystemRDLParser.S_propertyContext))
         else:
             value = self.extract_rhs_value(ctx.getChild(2))
         inst.set_property(prop, value, self.user_def_props, True)

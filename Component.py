@@ -33,7 +33,7 @@ class Component:
         return self.__class__.__name__
 
     def set_property(self, prop, value, user_def_props, is_dynamic):
-        self.validate_property(prop, value, user_def_props, is_dynamic)
+        value = self.validate_property(prop, value, user_def_props, is_dynamic)
         setattr(self, prop, value)
         self.validate_exclusivity()
 
@@ -116,6 +116,7 @@ class Component:
                     value = user_def_prop.prop_default
                 elif not self.check_type(prop, value):
                     exit('Error: Property \'{}\' expected {}.'.format(prop, self.properties[prop]))
+        return value
 
     def validate_exclusivity(self):
         for exs in self.EXCLUSIVES:

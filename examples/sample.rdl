@@ -1,4 +1,4 @@
-property user_prop1 { type = string; component = field|reg; default = "hi";};
+property user_prop1 { type = string; component = field|reg;};
 addrmap am1 {
   default encode = enum {
                       a = 1'b0;
@@ -22,6 +22,7 @@ addrmap am1 {
         rclr;
         sw = rw;
         hw = r;
+        user_prop1;
       } data_field[31:0];
     } data @0x0 +=0x2;
   } rf1;

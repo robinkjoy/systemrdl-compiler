@@ -95,7 +95,7 @@ class Listener(SystemRDLListener):
             if tok.getText() == prop_token[prop][1]:
                 return extract_num(ctx.children[i+1].getText())
 
-    def extract_rhs_value(self, ctx):
+    def extract_rhs_value(self, ctx, prop):
         if ctx.property_rvalue_constant() is not None:
             value_str = ctx.getText()
             childctx = ctx.getChild(0)
@@ -110,7 +110,10 @@ class Listener(SystemRDLListener):
         elif ctx.enum_body() is not None:
             return self.extract_enum_body(ctx.getChild(1), Component.Enum(None))
         elif ctx.instance_ref() is not None:
-            return self.extract_instance_ref(ctx.getChild(0))
+            if prop == 'encode':    # encode value is enum definition. not instances
+                return self.get_definition(Component.Enum, ctx.getText())
+            else:
+                return self.extract_instance_ref(ctx.getChild(0))
         elif ctx.concat() is not None:
             exit('error:{}: concat not implemented.',format(ctx.start.line))
 
@@ -523,7 +526,7 @@ class Listener(SystemRDLListener):
                 if ctx.property_assign_rhs() is None:
                     value = True
                 else:
-                    value = self.extract_rhs_value(ctx.getChild(2))
+                    value = self.extract_rhs_value(ctx.getChild(2), prop)
                 if not cls.check_type(prop, value):
                     exit('error:{}: {} expected {}.'.format(ctx.start.line, prop, cls.properties[prop]))
             self.add_default((prop, value))
@@ -538,7 +541,7 @@ class Listener(SystemRDLListener):
                 if ctx.property_assign_rhs() is None:
                     value = self.get_implicit_value(self.curr_comp, prop, ctx.getChild(0))
                 else:
-                    value = self.extract_rhs_value(ctx.getChild(2))
+                    value = self.extract_rhs_value(ctx.getChild(2), prop)
                 self.curr_comp.set_property(prop, value, self.user_def_props, False)
 
     # Exit a parse tree produced by SystemRDLParser#explicit_property_assign.
@@ -555,7 +558,7 @@ class Listener(SystemRDLListener):
         if ctx.property_assign_rhs() is None:
             value = self.get_implicit_value(inst, prop, ctx.getChild(0).getChild(0, SystemRDLParser.S_propertyContext))
         else:
-            value = self.extract_rhs_value(ctx.getChild(2))
+            value = self.extract_rhs_value(ctx.getChild(2), prop)
         inst.set_property(prop, value, self.user_def_props, True)
 
     # Exit a parse tree produced by SystemRDLParser#post_property_assign.
@@ -646,7 +649,9 @@ class Listener(SystemRDLListener):
 
     # Enter a parse tree produced by SystemRDLParser#enum_def.
     def enterEnum_def(self, ctx:SystemRDLParser.Enum_defContext):
-        pass
+        enum = Component.Enum(ctx.getChild(1).getText())
+        self.extract_enum_body(ctx.getChild(2), enum)
+        self.add_definition(enum)
 
     # Exit a parse tree produced by SystemRDLParser#enum_def.
     def exitEnum_def(self, ctx:SystemRDLParser.Enum_defContext):

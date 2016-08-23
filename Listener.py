@@ -116,7 +116,7 @@ class Listener(SystemRDLListener):
         elif ctx.enum_body() is not None:
             return self.extract_enum_body(ctx.getChild(1), Component.Enum(None))
         elif ctx.instance_ref() is not None:
-            pass
+            return self.extract_instance_ref(ctx.getChild(0))
         elif ctx.concat() is not None:
             exit('error:{}: concat not implemented.',format(ctx.start.line))
 
@@ -143,6 +143,34 @@ class Listener(SystemRDLListener):
                 setattr(entry, propctx.getChild(0).getText(), propctx.getChild(2).getText())
             enum.comps.append(entry)
         return enum
+
+    def extract_instance_ref(self, ctx):
+        prop = None
+        for i, elemctx in enumerate(ctx.children):
+            parent = self.curr_comp if i == 0 else inst
+            if isinstance(elemctx, SystemRDLParser.Instance_ref_elemContext):
+                def match(comp, inst_id):
+                    if isinstance(comp, list):
+                        return comp[0].inst_id == inst_id
+                    else:
+                        return comp.inst_id == inst_id
+                if isinstance(parent, list):
+                    exit('error:{}: array index for {} not specified.'.format(
+                                            elemctx.start.line, parent.inst_id))
+                inst_id = elemctx.getChild(0).getText()
+                inst = next((x for x in parent.comps if match(x, inst_id)), None)
+                if elemctx.num() is not None:
+                    if not isinstance(inst, list):
+                        exit('error:{}: {} is not an array'.format(
+                            elemctx.start.line, inst.inst_id))
+                    index = extract_num(elemctx.getChild(2).getText())
+                    if isinstance(index, tuple):
+                        exit('error:{}: array index should be numeric.'.format(
+                                            elemctx.start.line))
+                    inst = inst[index]
+            elif isinstance(elemctx, SystemRDLParser.S_propertyContext):
+                prop = elemctx.getChild(0).getText()
+        return (inst, prop) if prop is not None else inst
 
     # Enter a parse tree produced by SystemRDLParser#root.
     def enterRoot(self, ctx:SystemRDLParser.RootContext):

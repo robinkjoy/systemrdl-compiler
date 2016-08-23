@@ -1,6 +1,14 @@
 property user_prop1 { type = string; component = field|reg; default = "hi";};
 addrmap am1 {
-  default encode = enum {on = 1'b1; off = 1'b0 { name = "Off";};};
+  default encode = enum {
+                      a = 1'b0;
+                      b = 1'b1 {
+                        name="off";
+                      }; 
+                   };
+  default sw = r;
+  signal {} generic_reset;
+  default resetsignal = generic_reset;
   name = "addrmap";
   regfile {
     reg {
@@ -10,10 +18,9 @@ addrmap am1 {
         name = "data_field";
         desc = "Data read/write field";
         rclr;
-        sw = rw;
+        //sw = rw;
         hw = r;
-        reset = 32'd2;
-      } data_field[31:0] = 32'd12;
+      } data_field[31:0];
     } data @0x0 +=0x2;
   } rf1;
 };

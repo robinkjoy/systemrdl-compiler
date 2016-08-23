@@ -107,8 +107,8 @@ class Component:
                 'boolean': 'boolean',
                 'ref': 'reference'
                 }
-            user_def_prop = [x for x in user_def_props if x.prop_id == prop]
-            if not user_def_prop:
+            user_def_prop = next((x for x in user_def_props if x.prop_id == prop), None)
+            if user_def_prop is None:
                 exit('Error: Property \'{}\' not defined for {}.'.format(prop, self.get_type()))
             else:
                 self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]

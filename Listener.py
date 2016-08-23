@@ -545,7 +545,15 @@ class Listener(SystemRDLListener):
 
     # Enter a parse tree produced by SystemRDLParser#post_property_assign.
     def enterPost_property_assign(self, ctx:SystemRDLParser.Post_property_assignContext):
-        pass
+        inst_prop = self.extract_instance_ref(ctx.getChild(0))
+        if not isinstance(inst_prop, tuple):
+            exit('error:{}: property is not specified.'.format(ctx.start.line))
+        (inst, prop) = inst_prop
+        if ctx.property_assign_rhs() is None:
+            value = True
+        else:
+            value = self.extract_rhs_value(ctx.getChild(2))
+        inst.set_property(prop, value, self.user_def_props, True)
 
     # Exit a parse tree produced by SystemRDLParser#post_property_assign.
     def exitPost_property_assign(self, ctx:SystemRDLParser.Post_property_assignContext):

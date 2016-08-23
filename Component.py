@@ -58,7 +58,8 @@ class Component:
             'addressingType': 'realign',
             'precedenceType': 'sw',
             'reference': None,
-            'reference2enum': None
+            'reference2enum': None,
+            'intrmodType' : None
             }
         prop_type = self.properties[prop]
         if isinstance(prop_type, list):
@@ -88,6 +89,8 @@ class Component:
             elif prop_type == 'reference' and isinstance(value, Component):
                 return True
             elif prop_type == 'reference2enum' and isinstance(value, Enum):
+                return True
+            elif prop_type == 'intrmodType' and value in ('nonsticky', 'posedge', 'negedge', 'bothedge', 'level'):
                 return True
         return False
 
@@ -271,7 +274,7 @@ class Field(Component):
         ['enable', 'mask'],                         # (7.9.1.a)
         ['haltenable', 'haltmask'],                 # (7.9.1.b)
         ['nonsticky', 'sticky', 'stickybit'],       # (7.9.1.c)
-        ['posedge', 'negedge', 'bothedge', 'level'] # (7.9.1.g)
+        # ['posedge', 'negedge', 'bothedge', 'level'] # (7.9.1.g)
         ]
 
     def __init__(self, def_id, inst_id, parent, defaults):
@@ -320,12 +323,9 @@ class Field(Component):
             'decrwidth': 'numeric',
             'decrthreshold': ['boolean', 'reference'],
             'decrsaturate': ['boolean', 'reference'],
-            # Interrupt types
-            'posedge': 'boolean',
-            'negedge': 'boolean',
-            'bothedge': 'boolean',
-            'level': 'boolean',
-            'nonsticky': 'boolean',
+            # Interrupt modifiers
+            'nonsticky' : 'boolean',
+            'intrmod': 'intrmodType',
             # Field access interrupt properties
             'intr': 'boolean',
             'enable': 'reference',

@@ -6,6 +6,8 @@ from Listener import Listener
 #from Visitor import Visitor
 
 def main(argv):
+    if len(argv) < 2:
+        exit('error: file not specified.')
     inputfile = FileStream(argv[1])
     lexer = SystemRDLLexer(inputfile)
     stream = CommonTokenStream(lexer)

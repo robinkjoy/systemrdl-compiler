@@ -143,8 +143,8 @@ default_property_assign
   ;
 
 explicit_property_assign
-  : property_modifier
-    s_property
+  : property_modifier       // nonsticky can be used with others
+    s_property              // change??
 
   | s_property
     ( EQ property_assign_rhs )?

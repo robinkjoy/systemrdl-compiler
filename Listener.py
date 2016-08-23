@@ -500,7 +500,7 @@ class Listener(SystemRDLListener):
     def enterExplicit_property_assign(self, ctx:SystemRDLParser.Explicit_property_assignContext):
         if self.rule_names[ctx.parentCtx.getRuleIndex()] == 'default_property_assign':
             if ctx.property_modifier():
-                exit('error:{}: syntax error'.format(ctx.start.line))
+                exit('error:{}: property modifier not allowed in default'.format(ctx.start.line))
             prop = ctx.getChild(0).getText()
             if prop in ('name', 'desc'):
                 if (ctx.property_assign_rhs() is None
@@ -520,12 +520,23 @@ class Listener(SystemRDLListener):
                 if ctx.property_assign_rhs() is None:
                     value = True
                 else:
-                    value = self.extract_rhs_value(ctx.getChild(0, SystemRDLParser.Property_assign_rhsContext))
+                    value = self.extract_rhs_value(ctx.getChild(2))
                 if not cls.check_type(prop, value):
                     exit('error:{}: {} expected {}.'.format(ctx.start.line, prop, cls.properties[prop]))
             self.add_default((prop, value))
         else:
-            pass
+            if ctx.property_modifier():
+                if ctx.getChild(1).getText() != 'intr':
+                    exit('error:{}: property modifier is allowed only for\'intr\''.format(ctx.start.line))
+                self.curr_comp.set_property('intrmod', ctx.getChild(0).getText(), [], False) # fix nonsticky
+                self.curr_comp.set_property('intr', True, [], False)
+            else:
+                prop = ctx.getChild(0).getText()
+                if ctx.property_assign_rhs() is None:
+                    value = True
+                else:
+                    value = self.extract_rhs_value(ctx.getChild(2))
+                self.curr_comp.set_property(prop, value, self.user_def_props, False)
 
     # Exit a parse tree produced by SystemRDLParser#explicit_property_assign.
     def exitExplicit_property_assign(self, ctx:SystemRDLParser.Explicit_property_assignContext):

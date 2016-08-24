@@ -244,6 +244,20 @@ class Listener(SystemRDLListener):
     def exitComponent_def(self, ctx:SystemRDLParser.Component_defContext):
         if ctx.getChild(1).getText() == '{' and ctx.anonymous_component_inst_elems() is None:
             exit('error:{}: definition name or instatiation name not specified.'.format(ctx.start.line))
+        comp_child = {
+            'Register': ['Field'],
+            'RegFile': ['Register'],
+            'AddrMap': ['AddrMap', 'RegFile', 'Register']
+            }
+        comp_type = self.curr_comp.get_type()
+        def match(comp, ctype):
+            if isinstance(comp, list):
+                return comp[0].get_type() in comp_child[ctype]
+            else:
+                return comp.get_type() in comp_child[ctype]
+        if comp_type in comp_child:
+            if not any([x for x in self.curr_comp.comps if match(x, comp_type)]):
+                exit('error:{}: no child components in {}'.format(ctx.start.line, comp_type))
         self.curr_comp = self.curr_comp.parent
         self.pop_definitions()
         self.pop_defaults()

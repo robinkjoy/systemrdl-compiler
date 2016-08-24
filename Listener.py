@@ -296,7 +296,7 @@ class Listener(SystemRDLListener):
                     inst = [comp.customcopy() for i in range(size)]
             if comp_type in ('Field', 'Signal'):
                 width = {'Field': 'fieldwidth', 'Signal': 'signalwidth'}[comp_type]
-                inst.set_property(width, size, [], False)
+                inst.set_property(width, size, ctx.start.line, [], False)
         inst_id = ctx.getChild(0).getText()
         if isinstance(inst, list):
             [setattr(x, 'inst_id', inst_id) for x in inst]
@@ -311,9 +311,9 @@ class Listener(SystemRDLListener):
             value = self.get_post_inst_prop_value(ctx, prop)
             if value is not None:
                 if isinstance(inst, list):
-                    [x.set_property(prop, value, [], None) for x in inst]
+                    [x.set_property(prop, value, ctx.start.line, [], None) for x in inst]
                 else:
-                    inst.set_property(prop, value, [], None)
+                    inst.set_property(prop, value, ctx.start.line, [], None)
         # if in root, component is signal
         if parent is None:
             self.add_root_sig_inst(inst)
@@ -346,22 +346,22 @@ class Listener(SystemRDLListener):
                     value = True
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
-                if not cls.check_type(prop, value):
+                if not cls.check_type(prop, value, ctx.start.line):
                     exit('error:{}: {} expected {}.'.format(ctx.start.line, prop, cls.properties[prop]))
             self.add_default((prop, value))
         else:
             if ctx.property_modifier():
                 if ctx.getChild(1).getText() != 'intr' or self.curr_comp.get_type() != 'Field':
                     exit('error:{}: property modifier is allowed only for\'intr\' on Field'.format(ctx.start.line))
-                self.curr_comp.set_property('intrmod', ctx.getChild(0).getText(), [], False) # fix nonsticky
-                self.curr_comp.set_property('intr', True, [], False)
+                self.curr_comp.set_property('intrmod', ctx.getChild(0).getText(), ctx.start.line, [], False) # fix nonsticky
+                self.curr_comp.set_property('intr', True, ctx.start.line, [], False)
             else:
                 prop = ctx.getChild(0).getText()
                 if ctx.property_assign_rhs() is None:
                     value = self.get_implicit_value(self.curr_comp, prop, ctx.getChild(0))
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
-                self.curr_comp.set_property(prop, value, self.user_def_props, False)
+                self.curr_comp.set_property(prop, value, ctx.start.line, self.user_def_props, False)
 
 
     # Enter a parse tree produced by SystemRDLParser#post_property_assign.
@@ -375,9 +375,9 @@ class Listener(SystemRDLListener):
         else:
             value = self.extract_rhs_value(ctx.getChild(2), prop)
         if isinstance(inst, list):
-            [x.set_property(prop, value, self.user_def_props, True) for x in inst]
+            [x.set_property(prop, value, ctx.start.line, self.user_def_props, True) for x in inst]
         else:
-            inst.set_property(prop, value, self.user_def_props, True)
+            inst.set_property(prop, value, ctx.start.line, self.user_def_props, True)
 
 
     # Enter a parse tree produced by SystemRDLParser#enum_def.

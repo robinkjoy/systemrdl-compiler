@@ -32,8 +32,8 @@ class Component:
     def get_type(self):
         return self.__class__.__name__
 
-    def set_property(self, prop, value, user_def_props, is_dynamic):
-        value = self.validate_property(prop, value, user_def_props, is_dynamic)
+    def set_property(self, prop, value, line, user_def_props, is_dynamic):
+        value = self.validate_property(prop, value, line, user_def_props, is_dynamic)
         setattr(self, prop, value)
         self.validate_exclusivity()
 
@@ -66,7 +66,7 @@ class Component:
             prop_type = prop_type[0]
         return prop_default[prop_type]
 
-    def check_type(self, prop, value):
+    def check_type(self, prop, value, line):
         prop_types = self.properties[prop]
         if isinstance(prop_types, str):
             prop_types = [prop_types]
@@ -94,14 +94,14 @@ class Component:
                 return True
         return False
 
-    def validate_property(self, prop, value, user_def_props, is_dynamic):
+    def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         if prop in self.properties:
             if is_dynamic and prop in self.NON_DYNAMIC_PROPERTIES:
-                exit('Error: Property \'{}\' cannot be assigned dynamically.'.format(prop))
-            if not self.check_type(prop, value):
-                exit('Error: Property \'{}\' expected {}.'.format(prop, self.properties[prop]))
+                exit('error:{} Property \'{}\' cannot be assigned dynamically.'.format(line, prop))
+            if not self.check_type(prop, value, line):
+                exit('error:{} Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
             if prop in ('signalwidth', 'fieldwidth') and getattr(self, prop) not in (None, value):
-                exit('error: instantiation width does not match explicitly defined width.')
+                exit('error:{} instantiation width does not match explicitly defined width.'.format(line))
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -111,19 +111,19 @@ class Component:
                 }
             user_def_prop = next((x for x in user_def_props if x.prop_id == prop), None)
             if user_def_prop is None:
-                exit('Error: Property \'{}\' not defined for {}.'.format(prop, self.get_type()))
+                exit('error:{} Property \'{}\' not defined for {}.'.format(line, prop, self.get_type()))
             else:
                 self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]
                 if value is None:
                     value = user_def_prop.prop_default
-                elif not self.check_type(prop, value):
-                    exit('Error: Property \'{}\' expected {}.'.format(prop, self.properties[prop]))
+                elif not self.check_type(prop, value, line):
+                    exit('error:{} Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
         return value
 
     def validate_exclusivity(self):
         for exs in self.EXCLUSIVES:
             if sum(map(true_or_assigned, [getattr(self, ex) for ex in exs])) > 1:
-                exit('Error: Properties {} should be exclusive in {}'.format(', '.join(exs),
+                exit('error: Properties {} should be exclusive in {}'.format(', '.join(exs),
                                                                             self.get_type()))
 
     def customcopy(self):
@@ -199,12 +199,12 @@ class AddrMap(Component):
         super().__init__(def_id, inst_id, parent, defaults)
         self.instantiated = False
 
-    def check_type(self, prop, value):
-        if not super().check_type(prop, value):
+    def check_type(self, prop, value, line):
+        if not super().check_type(prop, value, line):
             return False
         # semantics (10.3.1)
         if prop == 'alignment' and not is_power_2(value):
-            exit('Error: Property \'alignment\' should be a power of two.')
+            exit('error:{}: Property \'alignment\' should be a power of two.'.format(line))
         return True
 
 class RegFile(Component):
@@ -224,12 +224,12 @@ class RegFile(Component):
         super().__init__(def_id, inst_id, parent, defaults)
 
 
-    def check_type(self, prop, value):
-        if not super().check_type(prop, value):
+    def check_type(self, prop, value, line):
+        if not super().check_type(prop, value, line):
             return False
         # semantics (9.1.1)
         if prop == 'alignment' and not is_power_2(value):
-            exit('Error: Property \'alignment\' should be a power of two.')
+            exit('error:{}: Property \'alignment\' should be a power of two.'.format(line))
         return True
 
 class Register(Component):
@@ -252,15 +252,15 @@ class Register(Component):
             }
         super().__init__(def_id, inst_id, parent, defaults)
 
-    def check_type(self, prop, value):
-        if not super().check_type(prop, value):
+    def check_type(self, prop, value, line):
+        if not super().check_type(prop, value, line):
             return False
         # semantics (8.5.1)
         if prop in ('regwidth', 'accesswidth') and ( not is_power_2(value) or value < 8 ):
-            exit('Error: Property \'{}\' should be a power of two and >= 8.'.format(prop))
+            exit('error:{}: Property \'{}\' should be a power of two and >= 8.'.format(line, prop))
         if (prop in ('at_addr', 'inc_addr', 'align_addr')
                 and self.parent.get_type() != 'RegFile'):
-            exit('error: address allocation is valid only for reg/regfiles inside regfile')
+            exit('error:{}: address allocation is valid only for reg/regfiles inside regfile'.format(line))
         return True
 
 class Field(Component):
@@ -344,11 +344,11 @@ class Field(Component):
         super().__init__(def_id, inst_id, parent, defaults)
         self.position = (None, None)
 
-    def check_type(self, prop, value):
-        if not super().check_type(prop, value):
+    def check_type(self, prop, value, line):
+        if not super().check_type(prop, value, line):
             return False
         if prop == 'reset' and isinstance(value, int) and value != 0:
-            exit('Error: Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
+            exit('error:{}: Verilog style integer should be used for non-zero reset values.'.format(line))  # (7.5.1.a)
         return True
         # invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')] # check after completion??
         # if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:                 # (Table 9)
@@ -378,8 +378,8 @@ class Enum(Component):
         self.properties = {}
         super().__init__(def_id, None, None, [])
 
-    def set_property(self, prop, value):
-        super().set_property(prop, value, [], False)
+    def set_property(self, prop, value, line):
+        super().set_property(prop, value, line, [], False)
 
 class EnumEntry(Component):
 
@@ -388,8 +388,8 @@ class EnumEntry(Component):
         super().__init__(def_id, None, None, [])
         self.value = value
 
-    def set_property(self, prop, value):
-        super().set_property(prop, value, [], False)
+    def set_property(self, prop, value, line):
+        super().set_property(prop, value, line, [], False)
 
 class Property():
 

@@ -265,6 +265,7 @@ class Listener(SystemRDLListener):
                 exit('error:{}: component \'{}\' definition not found'.format(
                     ctx.parentCtx.start.line, comp_name))
             parent = self.curr_comp
+        comp_type = comp.get_type()
         if ctx.array() is None:
             inst = comp.customcopy()
         else:
@@ -272,25 +273,28 @@ class Listener(SystemRDLListener):
             if ctx.getChild(1).getChild(2).getText() == ':':
                 inst = comp.customcopy()
                 # (5.1.2.a.3.ii)
-                if inst.get_type() != 'Field':    # Signal too??
+                if comp_type != 'Field':    # Signal too??
                     exit('error:{}: array indices not allowed for {}'.format(
-                        ctx.start.line, inst.get_type()))
+                        ctx.start.line, comp_type))
                 high = extract_num(ctx.getChild(1).getChild(1).getText())
                 low = extract_num(ctx.getChild(1).getChild(3).getText())
                 if not isinstance(high, int) or not isinstance(low, int):
                     exit('error:{}: array indices should be unsizedNumeric'.format(
                         ctx.start.line))
                 inst.position = (high, low)
+                size = high - low + 1
             else:
                 size = extract_num(ctx.getChild(1).getChild(1).getText())
                 if not isinstance(size, int):
                     exit('error:{}: array size should be unsizedNumeric'.format(
                         ctx.start.line))
-                if comp.get_type() in ('Field', 'Signal'):
+                if comp_type in ('Field', 'Signal'):
                     inst = comp.customcopy()
-                    inst.size = size
                 else:
                     inst = [comp.customcopy() for i in range(size)]
+            if comp_type in ('Field', 'Signal'):
+                width = {'Field': 'fieldwidth', 'Signal': 'signalwidth'}[comp_type]
+                inst.set_property(width, size, [], False)
         inst_id = ctx.getChild(0).getText()
         if isinstance(inst, list):
             [setattr(x, 'inst_id', inst_id) for x in inst]

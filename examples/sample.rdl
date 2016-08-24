@@ -30,6 +30,7 @@ addrmap am1 {
       field {
         encode = e1;
         name = "df2";
+        fieldwidth = 2;
       } df2;
     } data[2] @0x0 +=0x2;
   } rf1;

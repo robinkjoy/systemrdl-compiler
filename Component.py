@@ -100,6 +100,8 @@ class Component:
                 exit('Error: Property \'{}\' cannot be assigned dynamically.'.format(prop))
             if not self.check_type(prop, value):
                 exit('Error: Property \'{}\' expected {}.'.format(prop, self.properties[prop]))
+            if prop in ('signalwidth', 'fieldwidth') and getattr(self, prop) not in (None, value):
+                exit('error: instantiation width does not match explicitly defined width.')
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -341,7 +343,6 @@ class Field(Component):
             }
         super().__init__(def_id, inst_id, parent, defaults)
         self.position = (None, None)
-        self.size = None
 
     def check_type(self, prop, value):
         if not super().check_type(prop, value):
@@ -369,7 +370,7 @@ class Signal(Component):
             'activehigh': 'boolean'
             }
         super().__init__(def_id, inst_id, parent, defaults)
-        self.size = None
+
 
 class Enum(Component):
 

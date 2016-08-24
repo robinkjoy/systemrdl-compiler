@@ -4,14 +4,14 @@ from parser.SystemRDLParser import SystemRDLParser
 import Component
 
 
-def extract_num(string):
+def extract_num(string, line):
     if string.isdigit():
         return int(string)
     elif string[0:2] in ('0x', '0X'):
         return int(string, 16)
     string = re.split('\'([bodh])', string, 1, flags=re.IGNORECASE)
     if string[2][0] == '_':
-        exit('error: first position of value should not be \'_\'.')
+      exit('error:{}: first position of value should not be \'_\'.'.format(line))
     base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1].lower()]
     return (int(string[0]), int(string[2].translate({ord('_'): None}), base))
 
@@ -34,8 +34,9 @@ class Listener(SystemRDLListener):
         self.user_def_props = []
         self.root_sig_insts = []
         self.defaults = [{}]
+        self.assigned_props = [[]]
 
-    def add_definition(self, definition):
+    def add_definition(self, definition, line):
         allowed_defs = {
             'Property': [],
             'Enum': [],
@@ -49,16 +50,20 @@ class Listener(SystemRDLListener):
         if self.curr_comp is not None:
             curr_type = self.curr_comp.get_type()
             if comp_type not in allowed_defs[curr_type]:
-                exit('error: {} definition not allowed in {}'.format(comp_type, curr_type))
+                exit('error:{}: {} definition not allowed in {}'.format(line, comp_type, curr_type))
         if any([x for x in self.definitions[-1] if x.def_id == definition.def_id]):
-            exit('error: all definition names should be unique within a scope')
+            exit('error:{}: all definition names should be unique within a scope'.format(line))
         self.definitions[-1].append(definition)
 
-    def push_definitions(self):
+    def push_scope(self):
         self.definitions.append([])
+        self.defaults.append({})
+        self.assigned_props.append([])
 
-    def pop_definitions(self):
+    def pop_scope(self):
         self.definitions.pop()
+        self.defaults.pop()
+        self.assigned_props.pop()
 
     def get_definition(self, def_type, def_id):
         for defs in reversed(self.definitions):
@@ -67,21 +72,15 @@ class Listener(SystemRDLListener):
                 return definition[0]
         return None
 
-    def add_root_sig_inst(self, inst):
+    def add_root_sig_inst(self, inst, line):
         if any([x for x in self.root_sig_insts if x.inst_id == inst.inst_id]):
-            exit('error: all instance names should be unique within a scope')
+            exit('error:{}: all instance names should be unique within a scope'.format(line))
         self.root_sig_insts.append(inst)
 
-    def add_default(self, default):
+    def add_default(self, default, line):
         if default[0] in self.defaults[-1]:
-            exit('error: defaults can be assigned only once per scope.')
+            exit('error:{}: defaults can be assigned only once per scope.'.format(line))
         self.defaults[-1].update({default[0]: default[1]})
-
-    def push_defaults(self):
-        self.defaults.append({})
-
-    def pop_defaults(self):
-        self.defaults.pop()
 
     def get_post_inst_prop_value(self, ctx, prop):
         prop_token = {'reset': ('EQ', '='),
@@ -93,14 +92,14 @@ class Listener(SystemRDLListener):
             return None
         for i, tok in enumerate(ctx.children):
             if tok.getText() == prop_token[prop][1]:
-                return extract_num(ctx.children[i+1].getText())
+                return extract_num(ctx.children[i+1].getText(), ctx.children[i+1].start.line)
 
     def extract_rhs_value(self, ctx, prop):
         if ctx.property_rvalue_constant() is not None:
             value_str = ctx.getText()
             childctx = ctx.getChild(0)
             if childctx.num() is not None:
-                return extract_num(value_str)
+                return extract_num(value_str, childctx.start.line)
             elif value_str == 'true':
                 return True
             elif value_str == 'false':
@@ -124,7 +123,7 @@ class Listener(SystemRDLListener):
             if not isinstance(entryctx, SystemRDLParser.Enum_entryContext):
                 continue
             name = entryctx.getChild(0).getText()
-            value = extract_num(entryctx.getChild(2).getText())
+            value = extract_num(entryctx.getChild(2).getText(), entryctx.getChild(2).start.line)
             if not isinstance(value, tuple):
                 exit('error:{}: enum entry value should be sizedNumeric'.format(entryctx.start.line))
             if any([x for x in enum.comps if x.def_id == name]):
@@ -156,11 +155,13 @@ class Listener(SystemRDLListener):
                                             elemctx.start.line, parent[0].inst_id))
                 inst_id = elemctx.getChild(0).getText()
                 inst = next((x for x in parent.comps if match(x, inst_id)), None)
+                if inst is None:
+                    exit('error:{}: {} not found'.format(elemctx.start.line, inst_id))
                 if elemctx.num() is not None:
                     if not isinstance(inst, list):
                         exit('error:{}: {} is not an array'.format(
                             elemctx.start.line, inst.inst_id))
-                    index = extract_num(elemctx.getChild(2).getText())
+                    index = extract_num(elemctx.getChild(2).getText(), elemctx.getChild(2).start.line)
                     if isinstance(index, tuple):
                         exit('error:{}: array index should be numeric.'.format(
                                             elemctx.start.line))
@@ -176,6 +177,11 @@ class Listener(SystemRDLListener):
             return True
         else:
             return None
+
+    def check_property_already_set(self, inst, prop, line):
+        if (id(inst), prop) in self.assigned_props[-1]:             # (5.1.3.1) ex in (5.1.4)
+            exit('error:{}: property \'{}\' already assigned in scope'.format(line, prop))
+        self.assigned_props[-1].append((id(inst), prop))
 
     # Exit a parse tree produced by SystemRDLParser#root.
     def exitRoot(self, ctx:SystemRDLParser.RootContext):
@@ -214,7 +220,7 @@ class Listener(SystemRDLListener):
             elif prop_default_ctx.num() is not None:
                 if prop_type != 'number':
                     exit('error:{}: default does not match type.'.format(ctx.start.line))
-                prop_default = extract_num(prop_default_str)
+                prop_default = extract_num(prop_default_str, prop_default_ctx.start.line)
                 if not isinstance(prop_default, int):
                     exit('error:{}: default value cannot be sizedNumeric.'.format(ctx.start.line))
             else:
@@ -235,10 +241,9 @@ class Listener(SystemRDLListener):
         # definition
         else:
             comp = self.COMPONENT_CLASS[comp_type](ctx.getChild(1).getText(), None, self.curr_comp, self.defaults)
-            self.add_definition(comp)
+            self.add_definition(comp, ctx.start.line)
         self.curr_comp = comp
-        self.push_definitions()
-        self.push_defaults()
+        self.push_scope()
 
     # Exit a parse tree produced by SystemRDLParser#component_def.
     def exitComponent_def(self, ctx:SystemRDLParser.Component_defContext):
@@ -259,8 +264,7 @@ class Listener(SystemRDLListener):
             if not any([x for x in self.curr_comp.comps if match(x, comp_type)]):
                 exit('error:{}: no child components in {}'.format(ctx.start.line, comp_type))
         self.curr_comp = self.curr_comp.parent
-        self.pop_definitions()
-        self.pop_defaults()
+        self.pop_scope()
 
 
     # Enter a parse tree produced by SystemRDLParser#anonymous_component_inst_elems.
@@ -292,15 +296,15 @@ class Listener(SystemRDLListener):
                 if comp_type != 'Field':    # Signal too??
                     exit('error:{}: array indices not allowed for {}'.format(
                         ctx.start.line, comp_type))
-                high = extract_num(ctx.getChild(1).getChild(1).getText())
-                low = extract_num(ctx.getChild(1).getChild(3).getText())
+                high = extract_num(ctx.getChild(1).getChild(1).getText(), ctx.getChild(1).getChild(1).start.line)
+                low = extract_num(ctx.getChild(1).getChild(3).getText(), ctx.getChild(1).getChild(3).start.line)
                 if not isinstance(high, int) or not isinstance(low, int):
                     exit('error:{}: array indices should be unsizedNumeric'.format(
                         ctx.start.line))
                 inst.position = (high, low)
                 size = high - low + 1
             else:
-                size = extract_num(ctx.getChild(1).getChild(1).getText())
+                size = extract_num(ctx.getChild(1).getChild(1).getText(), ctx.getChild(1).getChild(1).start.line)
                 if not isinstance(size, int):
                     exit('error:{}: array size should be unsizedNumeric'.format(
                         ctx.start.line))
@@ -330,9 +334,9 @@ class Listener(SystemRDLListener):
                     inst.set_property(prop, value, ctx.start.line, [], None)
         # if in root, component is signal
         if parent is None:
-            self.add_root_sig_inst(inst)
+            self.add_root_sig_inst(inst, ctx.start.line)
         else:
-            parent.add_comp(inst)
+            parent.add_comp(inst, ctx.start.line)
 
 
     # Enter a parse tree produced by SystemRDLParser#explicit_property_assign.
@@ -362,11 +366,12 @@ class Listener(SystemRDLListener):
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
                 if not cls.check_type(prop, value, ctx.start.line):
                     exit('error:{}: {} expected {}.'.format(ctx.start.line, prop, cls.properties[prop]))
-            self.add_default((prop, value))
+            self.add_default((prop, value), ctx.start.line)
         else:
             if ctx.property_modifier():
                 if ctx.getChild(1).getText() != 'intr' or self.curr_comp.get_type() != 'Field':
                     exit('error:{}: property modifier is allowed only for\'intr\' on Field'.format(ctx.start.line))
+                self.check_property_already_set(self.curr_comp, 'intr', ctx.start.line)
                 self.curr_comp.set_property('intrmod', ctx.getChild(0).getText(), ctx.start.line, [], False) # fix nonsticky
                 self.curr_comp.set_property('intr', True, ctx.start.line, [], False)
             else:
@@ -375,6 +380,7 @@ class Listener(SystemRDLListener):
                     value = self.get_implicit_value(self.curr_comp, prop, ctx.getChild(0))
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
+                self.check_property_already_set(self.curr_comp, prop, ctx.start.line)
                 self.curr_comp.set_property(prop, value, ctx.start.line, self.user_def_props, False)
 
 
@@ -388,6 +394,7 @@ class Listener(SystemRDLListener):
             value = self.get_implicit_value(inst, prop, ctx.getChild(0).getChild(0, SystemRDLParser.S_propertyContext))
         else:
             value = self.extract_rhs_value(ctx.getChild(2), prop)
+        self.check_property_already_set(inst, prop, ctx.start.line)
         if isinstance(inst, list):
             [x.set_property(prop, value, ctx.start.line, self.user_def_props, True) for x in inst]
         else:
@@ -398,4 +405,4 @@ class Listener(SystemRDLListener):
     def enterEnum_def(self, ctx:SystemRDLParser.Enum_defContext):
         enum = Component.Enum(ctx.getChild(1).getText())
         self.extract_enum_body(ctx.getChild(2), enum)
-        self.add_definition(enum)
+        self.add_definition(enum, ctx.start.line)

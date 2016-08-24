@@ -97,11 +97,11 @@ class Component:
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         if prop in self.properties:
             if is_dynamic and prop in self.NON_DYNAMIC_PROPERTIES:
-                exit('error:{} Property \'{}\' cannot be assigned dynamically.'.format(line, prop))
+                exit('error:{}: Property \'{}\' cannot be assigned dynamically.'.format(line, prop))
             if not self.check_type(prop, value, line):
-                exit('error:{} Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
+                exit('error:{}: Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
             if prop in ('signalwidth', 'fieldwidth') and getattr(self, prop) not in (None, value):
-                exit('error:{} instantiation width does not match explicitly defined width.'.format(line))
+                exit('error:{}: instantiation width does not match explicitly defined width.'.format(line))
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -111,13 +111,13 @@ class Component:
                 }
             user_def_prop = next((x for x in user_def_props if x.prop_id == prop), None)
             if user_def_prop is None:
-                exit('error:{} Property \'{}\' not defined for {}.'.format(line, prop, self.get_type()))
+                exit('error:{}: Property \'{}\' not defined for {}.'.format(line, prop, self.get_type()))
             else:
                 self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]
                 if value is None:
                     value = user_def_prop.prop_default
                 elif not self.check_type(prop, value, line):
-                    exit('error:{} Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
+                    exit('error:{}: Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
         return value
 
     def validate_exclusivity(self):
@@ -135,7 +135,7 @@ class Component:
         newcopy.comps = [copy_method(x) for x in self.comps]
         return newcopy
 
-    def add_comp(self, inst):
+    def add_comp(self, inst, line):
         allowed_insts = {
             'Enum': ['EnumEntry'],
             'Signal': [],
@@ -150,11 +150,11 @@ class Component:
             comp_type = inst.get_type()
         parent_type = self.get_type()
         if comp_type not in allowed_insts[parent_type]:
-            exit('error: {} instance not allowed in {}'.format(comp_type, parent_type))
+            exit('error:{}: {} instance not allowed in {}'.format(line, comp_type, parent_type))
         inst_id = inst[0].inst_id if isinstance(inst, list) else inst.inst_id
         if any([x for x in self.comps if (isinstance(x, list) and x[0].inst_id == inst_id)
             or (isinstance(x, Component) and x.inst_id == inst_id)]):
-            exit('error: all instance names should be unique within a scope')
+            exit('error:{}: all instance names should be unique within a scope'.format(line))
         self.comps.append(inst)
 
     def pprint(self, level=0):

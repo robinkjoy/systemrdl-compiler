@@ -164,6 +164,8 @@ class Listener(SystemRDLListener):
                     if isinstance(index, tuple):
                         exit('error:{}: array index should be numeric.'.format(
                                             elemctx.start.line))
+                    if index >= len(inst):
+                        exit('error:{}: array index out of range'.format(elemctx.start.line))
                     inst = inst[index]
             elif isinstance(elemctx, SystemRDLParser.S_propertyContext):
                 prop = elemctx.getChild(0).getText()

@@ -31,10 +31,10 @@ addrmap am1 {
         encode = e1;
         name = "df2";
         fieldwidth = 2;
-      } df2;
-    } data[2] @0x0 +=0x2;
+      } df2[2];
+    } data[1] @0x0 +=0x2;
   } rf1;
   rf1.data->accesswidth = 32;
   rf1.data->user_prop1 = "hello";
-  rf1.data[1].df2->name="data2";
+  rf1.data[0].df2->name="data2";
 };

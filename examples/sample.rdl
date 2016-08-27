@@ -14,7 +14,7 @@ addrmap am1 {
   signal {} generic_reset;
   default resetsignal = generic_reset;
   name = "addrmap";
-  regfile {
+  regfile rf {
     reg {
       name = "data";
       desc = "Data read/write register";
@@ -26,6 +26,7 @@ addrmap am1 {
         sw = rw;
         hw = r;
         user_prop1;
+        reset = 32'd0;
       } data_field[31:0];
       field {
         encode = e1;
@@ -33,8 +34,11 @@ addrmap am1 {
         fieldwidth = 2;
       } df2[2];
     } data[1] @0x0 +=0x2;
-  } rf1;
+  };
+  rf rf1;
+  rf rf2;
   rf1.data->accesswidth = 32;
   rf1.data->user_prop1 = "hello";
   rf1.data[0].df2->name="data2";
+  rf1.data[0].data_field->reset=32'd1;
 };

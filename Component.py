@@ -1,4 +1,4 @@
-from copy import copy
+import copy
 
 
 def error(line, msg, *args):
@@ -135,10 +135,11 @@ class Component:
     def customcopy(self):
         if isinstance(self, Signal) or isinstance(self, Enum):
             return self
-        newcopy = copy(self)
+        newcopy = copy.copy(self)
         def copy_method(x):
             return [y.customcopy() for y in x] if isinstance(x, list) else x.customcopy()
         newcopy.comps = [copy_method(x) for x in self.comps]
+        newcopy.properties = copy.deepcopy(self.properties)
         return newcopy
 
     def add_comp(self, inst, line):

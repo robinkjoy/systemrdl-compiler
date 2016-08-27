@@ -1,8 +1,13 @@
 from copy import copy
 
 
+def error(line, msg, *args):
+    exit('error:{}: '.format(line) + msg.format(*args))
+
+
 def is_power_2(number):
     return number > 0 and (number & (number - 1)) == 0
+
 
 def true_or_assigned(val):
     if val is None or val == '""' or (isinstance(val, bool) and not val):
@@ -59,7 +64,7 @@ class Component:
             'precedenceType': 'sw',
             'reference': None,
             'reference2enum': None,
-            'intrmodType' : None
+            'intrmodType': None
             }
         prop_type = self.properties[prop]
         if isinstance(prop_type, list):
@@ -90,18 +95,19 @@ class Component:
                 return True
             elif prop_type == 'reference2enum' and isinstance(value, Enum):
                 return True
-            elif prop_type == 'intrmodType' and value in ('nonsticky', 'posedge', 'negedge', 'bothedge', 'level'):
+            elif (prop_type == 'intrmodType'
+                  and value in ('nonsticky', 'posedge', 'negedge', 'bothedge', 'level')):
                 return True
         return False
 
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         if prop in self.properties:
             if is_dynamic and prop in self.NON_DYNAMIC_PROPERTIES:
-                exit('error:{}: Property \'{}\' cannot be assigned dynamically.'.format(line, prop))
+                error(line, 'Property \'{}\' cannot be assigned dynamically.', prop)
             if not self.check_type(prop, value, line):
-                exit('error:{}: Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
+                error(line, 'Property \'{}\' expected {}.', prop, self.properties[prop])
             if prop in ('signalwidth', 'fieldwidth') and getattr(self, prop) not in (None, value):
-                exit('error:{}: instantiation width does not match explicitly defined width.'.format(line))
+                error(line, 'instantiation width does not match explicitly defined width.')
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -111,13 +117,13 @@ class Component:
                 }
             user_def_prop = next((x for x in user_def_props if x.prop_id == prop), None)
             if user_def_prop is None:
-                exit('error:{}: Property \'{}\' not defined for {}.'.format(line, prop, self.get_type()))
+                error(line, 'Property \'{}\' not defined for {}.', prop, self.get_type())
             else:
                 self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]
                 if value is None:
                     value = user_def_prop.prop_default
                 elif not self.check_type(prop, value, line):
-                    exit('error:{}: Property \'{}\' expected {}.'.format(line, prop, self.properties[prop]))
+                    error(line, 'Property \'{}\' expected {}.', prop, self.properties[prop])
         return value
 
     def validate_exclusivity(self):
@@ -150,11 +156,11 @@ class Component:
             comp_type = inst.get_type()
         parent_type = self.get_type()
         if comp_type not in allowed_insts[parent_type]:
-            exit('error:{}: {} instance not allowed in {}'.format(line, comp_type, parent_type))
+            error(line, '{} instance not allowed in {}', comp_type, parent_type)
         inst_id = inst[0].inst_id if isinstance(inst, list) else inst.inst_id
         if any([x for x in self.comps if (isinstance(x, list) and x[0].inst_id == inst_id)
             or (isinstance(x, Component) and x.inst_id == inst_id)]):
-            exit('error:{}: all instance names should be unique within a scope'.format(line))
+            error(line, 'all instance names should be unique within a scope')
         self.comps.append(inst)
 
     def pprint(self, level=0):
@@ -176,11 +182,13 @@ class Component:
                 comp.pprint(level+1)
         print(' '*level*indent+'}')
 
+
 class AddrMap(Component):
 
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus', 'addressing',
-            'rsvdset', 'rsvdsetX', 'msb0', 'lsb0', 'bridge', 'arbiter']
-    EXCLUSIVES = [['msb0', 'lsb0']] # (10.3.1.g)
+                              'rsvdset', 'rsvdsetX', 'msb0', 'lsb0',
+                              'bridge', 'arbiter']
+    EXCLUSIVES = [['msb0', 'lsb0']]     # (10.3.1.g)
 
     def __init__(self, def_id, inst_id, parent, defaults):
         self.properties = {
@@ -204,8 +212,9 @@ class AddrMap(Component):
             return False
         # semantics (10.3.1)
         if prop == 'alignment' and not is_power_2(value):
-            exit('error:{}: Property \'alignment\' should be a power of two.'.format(line))
+            error(line, 'Property \'alignment\' should be a power of two.')
         return True
+
 
 class RegFile(Component):
 
@@ -223,14 +232,14 @@ class RegFile(Component):
             }
         super().__init__(def_id, inst_id, parent, defaults)
 
-
     def check_type(self, prop, value, line):
         if not super().check_type(prop, value, line):
             return False
         # semantics (9.1.1)
         if prop == 'alignment' and not is_power_2(value):
-            exit('error:{}: Property \'alignment\' should be a power of two.'.format(line))
+            error(line, 'Property \'alignment\' should be a power of two.')
         return True
+
 
 class Register(Component):
 
@@ -256,12 +265,13 @@ class Register(Component):
         if not super().check_type(prop, value, line):
             return False
         # semantics (8.5.1)
-        if prop in ('regwidth', 'accesswidth') and ( not is_power_2(value) or value < 8 ):
-            exit('error:{}: Property \'{}\' should be a power of two and >= 8.'.format(line, prop))
+        if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8 ):
+            error(line, 'Property \'{}\' should be a power of two and >= 8.', prop)
         if (prop in ('at_addr', 'inc_addr', 'align_addr')
                 and self.parent.get_type() != 'RegFile'):
-            exit('error:{}: address allocation is valid only for reg/regfiles inside regfile'.format(line))
+            error(line, 'address allocation is valid only for reg/regfiles inside regfile')
         return True
+
 
 class Field(Component):
 
@@ -327,7 +337,7 @@ class Field(Component):
             'decrthreshold': ['boolean', 'reference'],
             'decrsaturate': ['boolean', 'reference'],
             # Interrupt modifiers
-            'nonsticky' : 'boolean',
+            'nonsticky': 'boolean',
             'intrmod': 'intrmodType',
             # Field access interrupt properties
             'intr': 'boolean',
@@ -348,11 +358,12 @@ class Field(Component):
         if not super().check_type(prop, value, line):
             return False
         if prop == 'reset' and isinstance(value, int) and value != 0:
-            exit('error:{}: Verilog style integer should be used for non-zero reset values.'.format(line))  # (7.5.1.a)
+            error(line, 'Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
         return True
         # invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')] # check after completion??
         # if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:                 # (Table 9)
         #     exit('Error: Invalid field access pair.')
+
 
 class Signal(Component):
 
@@ -381,6 +392,7 @@ class Enum(Component):
     def set_property(self, prop, value, line):
         super().set_property(prop, value, line, [], False)
 
+
 class EnumEntry(Component):
 
     def __init__(self, def_id, value):
@@ -390,6 +402,7 @@ class EnumEntry(Component):
 
     def set_property(self, prop, value, line):
         super().set_property(prop, value, line, [], False)
+
 
 class Property():
 

@@ -294,6 +294,8 @@ class Listener(SystemRDLListener):
         if comp_type in comp_child:
             if not any([x for x in self.curr_comp.comps if match(x, comp_type)]):
                 error(ctx.start.line, 'no child components in {}', comp_type)
+        if ctx.anonymous_component_inst_elems() is None and comp_type == 'Register':
+            self.curr_comp.validate_fields()
         self.curr_comp = self.curr_comp.parent
         self.pop_scope()
 

@@ -53,6 +53,8 @@ class Component:
             return value
         if prop == 'name':
             return self.inst_id
+        if prop == 'regwidth':
+            return 32
         prop_default = {
             'boolean': False,
             'string': '""',
@@ -278,6 +280,8 @@ class Register(Component):
             error(line, 'Property \'{}\' should be a power of two and >= 8.', prop)
         return True
 
+    def validate_fields(self):
+        pass
 
 class Field(Component):
 

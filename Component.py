@@ -25,7 +25,7 @@ class Component:
     NON_DYNAMIC_PROPERTIES = []
     EXCLUSIVES = [[]]
 
-    def __init__(self, def_id, inst_id, parent, defaults):
+    def __init__(self, def_id, inst_id, parent, defaults, line):
         self.def_id = def_id
         self.inst_id = inst_id
         self.parent = parent
@@ -33,6 +33,7 @@ class Component:
         self.properties.update(self.UNIVERSAL_PROPERTIES)
         for prop in self.properties:
             setattr(self, prop, self.get_default(prop, defaults))
+        self.line = line
 
     def get_type(self):
         return self.__class__.__name__
@@ -40,7 +41,6 @@ class Component:
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         value = self.validate_property(prop, value, line, user_def_props, is_dynamic)
         setattr(self, prop, value)
-        self.validate_exclusivity()
 
     def get_default(self, prop, defaults):
         def get_default_value(prop, defaults):
@@ -126,12 +126,6 @@ class Component:
                     error(line, 'Property \'{}\' expected {}.', prop, self.properties[prop])
         return value
 
-    def validate_exclusivity(self):
-        for exs in self.EXCLUSIVES:
-            if sum(map(true_or_assigned, [getattr(self, ex) for ex in exs])) > 1:
-                exit('error: Properties {} should be exclusive in {}'.format(', '.join(exs),
-                                                                            self.get_type()))
-
     def customcopy(self):
         if isinstance(self, Signal) or isinstance(self, Enum):
             return self
@@ -183,6 +177,20 @@ class Component:
                 comp.pprint(level+1)
         print(' '*level*indent+'}')
 
+    def post_validate(self):
+        for exs in self.EXCLUSIVES:
+            if sum(map(true_or_assigned, [getattr(self, ex) for ex in exs])) > 1:
+                error(self.line, 'Properties {} should be exclusive in {} {}',
+                      ', '.join(exs), self.get_type(),
+                      self.def_id if self.inst_id is None else self.inst_id)
+        for comp in self.comps:
+            if isinstance(comp, list):
+                for c in comp:
+                    c.post_validate()
+            else:
+                comp.post_validate()
+
+
 
 class AddrMap(Component):
 
@@ -191,7 +199,7 @@ class AddrMap(Component):
                               'bridge', 'arbiter']
     EXCLUSIVES = [['msb0', 'lsb0']]     # (10.3.1.g)
 
-    def __init__(self, def_id, inst_id, parent, defaults):
+    def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
             'alignment': 'unsizedNumeric',
             'sharedextbus': 'boolean',
@@ -205,7 +213,7 @@ class AddrMap(Component):
             'bridge': 'boolean',
             'arbiter': 'string'
             }
-        super().__init__(def_id, inst_id, parent, defaults)
+        super().__init__(def_id, inst_id, parent, defaults, line)
         self.instantiated = False
 
     def check_type(self, prop, value, line):
@@ -222,7 +230,7 @@ class RegFile(Component):
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus']
     EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
 
-    def __init__(self, def_id, inst_id, parent, defaults):
+    def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
             'alignment': 'unsizedNumeric',
             'sharedextbus': 'boolean',
@@ -231,7 +239,7 @@ class RegFile(Component):
             'inc_addr': 'unsizedNumeric',
             'align_addr': 'unsizedNumeric'
             }
-        super().__init__(def_id, inst_id, parent, defaults)
+        super().__init__(def_id, inst_id, parent, defaults, line)
 
     def check_type(self, prop, value, line):
         if not super().check_type(prop, value, line):
@@ -247,7 +255,7 @@ class Register(Component):
     NON_DYNAMIC_PROPERTIES = ['regwidth', 'shared']
     EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
 
-    def __init__(self, def_id, inst_id, parent, defaults):
+    def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
             'regwidth': 'numeric',
             'accesswidth': 'numeric',
@@ -260,7 +268,7 @@ class Register(Component):
             'inc_addr': 'unsizedNumeric',
             'align_addr': 'unsizedNumeric'
             }
-        super().__init__(def_id, inst_id, parent, defaults)
+        super().__init__(def_id, inst_id, parent, defaults, line)
 
     def check_type(self, prop, value, line):
         if not super().check_type(prop, value, line):
@@ -268,9 +276,6 @@ class Register(Component):
         # semantics (8.5.1)
         if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8 ):
             error(line, 'Property \'{}\' should be a power of two and >= 8.', prop)
-        if (prop in ('at_addr', 'inc_addr', 'align_addr')
-                and self.parent.get_type() != 'RegFile'):
-            error(line, 'address allocation is valid only for reg/regfiles inside regfile')
         return True
 
 
@@ -281,17 +286,16 @@ class Field(Component):
         ['rclr', 'rset'],
         ['woset', 'woclr'],
         ['swwe', 'swwel'],
-        ['we', 'wel'],                              # (7.7.1.c)
-        ['hwenable', 'hwmask'],                     # (7.7.1.d)
-        ['incrwidth', 'incrvalue'],                 # (7.8.2.1.a)
-        ['decrwidth', 'decrvalue'],                 # (7.8.2.1.b)
-        ['enable', 'mask'],                         # (7.9.1.a)
-        ['haltenable', 'haltmask'],                 # (7.9.1.b)
-        ['nonsticky', 'sticky', 'stickybit'],       # (7.9.1.c)
-        # ['posedge', 'negedge', 'bothedge', 'level'] # (7.9.1.g)
+        ['we', 'wel'],                          # (7.7.1.c)
+        ['hwenable', 'hwmask'],                 # (7.7.1.d)
+        ['incrwidth', 'incrvalue'],             # (7.8.2.1.a)
+        ['decrwidth', 'decrvalue'],             # (7.8.2.1.b)
+        ['enable', 'mask'],                     # (7.9.1.a)
+        ['haltenable', 'haltmask'],             # (7.9.1.b)
+        ['nonsticky', 'sticky', 'stickybit'],   # (7.9.1.c)
         ]
 
-    def __init__(self, def_id, inst_id, parent, defaults):
+    def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
             # Field access properties
             'hw': 'accessType',
@@ -352,7 +356,7 @@ class Field(Component):
             'encode': 'reference2enum',
             'precedence': 'precedenceType'
             }
-        super().__init__(def_id, inst_id, parent, defaults)
+        super().__init__(def_id, inst_id, parent, defaults, line)
         self.position = (None, None)
 
     def check_type(self, prop, value, line):
@@ -361,9 +365,12 @@ class Field(Component):
         if prop == 'reset' and isinstance(value, int) and value != 0:
             error(line, 'Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
         return True
-        # invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')] # check after completion??
-        # if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:                 # (Table 9)
-        #     exit('Error: Invalid field access pair.')
+
+    def post_validate(self):
+        super().post_validate()
+        invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
+        if (self.sw, self.hw) in invalid_accesses:     # (Table 9)
+            exit('Error: Invalid field access pair.')
 
 
 class Signal(Component):
@@ -371,7 +378,7 @@ class Signal(Component):
     NON_DYNAMIC_PROPERTIES = ['signalwidth']
     EXCLUSIVES = [['sync', 'async'], ['activehigh', 'activelow']]
 
-    def __init__(self, def_id, inst_id, parent, defaults):
+    def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
             'signalwidth': 'numeric',
             'sync': 'boolean',
@@ -381,14 +388,14 @@ class Signal(Component):
             'activelow': 'boolean',
             'activehigh': 'boolean'
             }
-        super().__init__(def_id, inst_id, parent, defaults)
+        super().__init__(def_id, inst_id, parent, defaults, line)
 
 
 class Enum(Component):
 
     def __init__(self, def_id):
         self.properties = {}
-        super().__init__(def_id, None, None, [])
+        super().__init__(def_id, None, None, [], None)
 
     def set_property(self, prop, value, line):
         super().set_property(prop, value, line, [], False)
@@ -398,7 +405,7 @@ class EnumEntry(Component):
 
     def __init__(self, def_id, value):
         self.properties = {}
-        super().__init__(def_id, None, None, [])
+        super().__init__(def_id, None, None, [], None)
         self.value = value
 
     def set_property(self, prop, value, line):

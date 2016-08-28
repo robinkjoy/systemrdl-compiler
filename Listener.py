@@ -205,6 +205,8 @@ class Listener(SystemRDLListener):
         self.addrmaps = [x for x in self.definitions[0]
                          if isinstance(x, Component.AddrMap)
                          and not x.instantiated]
+        for addrmap in self.addrmaps:
+            addrmap.post_validate()
 
     # Enter a parse tree produced by SystemRDLParser#property_body.
     def enterProperty_body(self, ctx):
@@ -262,11 +264,12 @@ class Listener(SystemRDLListener):
                 error(ctx.start.line,
                       '{} should not be instantiated in root scope.', comp_type)
             comp = self.COMPONENT_CLASS[comp_type](
-                None, None, self.curr_comp, self.defaults)
+                None, None, self.curr_comp, self.defaults, ctx.start.line)
         # definition
         else:
-            comp = self.COMPONENT_CLASS[comp_type](
-                ctx.getChild(1).getText(), None, self.curr_comp, self.defaults)
+            comp = self.COMPONENT_CLASS[comp_type](ctx.getChild(1).getText(),
+                                                   None, self.curr_comp,
+                                                   self.defaults, ctx.start.line)
             self.add_definition(comp, ctx.start.line)
         self.curr_comp = comp
         self.push_scope()
@@ -345,14 +348,18 @@ class Listener(SystemRDLListener):
                 inst.set_property(width, size, ctx.start.line, [], False)
         inst_id = ctx.getChild(0).getText()
         if isinstance(inst, list):
-            [setattr(x, 'inst_id', inst_id) for x in inst]
-            [setattr(x, 'parent', parent) for x in inst]
-            [setattr(x, 'name', inst_id) for x in inst if x.name is None]
+            for i in inst:
+                i.inst_id = inst_id
+                i.parent = parent
+                if i.name is None:
+                    i.name = inst_id
+                i.line = ctx.start.line
         else:
             inst.inst_id = inst_id
             inst.parent = parent
             if inst.name is None:
                 inst.name = inst_id
+            inst.line = ctx.start.line
         for prop in ['reset', 'at_addr', 'inc_addr', 'align_addr']:
             value = self.get_post_inst_prop_value(ctx, prop)
             if value is not None:
@@ -382,8 +389,8 @@ class Listener(SystemRDLListener):
             else:
                 def prop_class(prop):
                     for key, cls in self.COMPONENT_CLASS.items():
-                        if prop in cls(None, None, [], []).properties:
-                            return cls(None, None, [], [])
+                        if prop in cls(None, None, [], [], None).properties:
+                            return cls(None, None, [], [], None)
                     return None
                 cls = prop_class(prop)
                 if cls is None:

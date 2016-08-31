@@ -319,7 +319,8 @@ class Register(Component):
         if len(indexes) > 1 and reduce(l, indexes):
             error(self.line, 'field positions overlap in {}',
                   self.def_id if self.inst_id is None else self.inst_id)
-        return 'msb0' if msb0 else 'lsb0'
+        self.field_endian = 'msb0' if msb0 else 'lsb0'
+        return self.field_endian
 
 
 class Field(Component):

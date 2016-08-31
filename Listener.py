@@ -286,28 +286,39 @@ class Listener(SystemRDLListener):
                 and ctx.anonymous_component_inst_elems() is None):
             error(ctx.start.line,
                   'definition name or instatiation name not specified.')
+        # at least one child component instantiated
         comp_child = {
             'Register': ['Field'],
             'RegFile': ['Register'],
             'AddrMap': ['AddrMap', 'RegFile', 'Register']
         }
-        comp_type = self.curr_comp.get_type()
+        comp = self.curr_comp
+        comp_type = comp.get_type()
         if comp_type in comp_child:
-            if not any([x for x in itercomps0(self.curr_comp.comps)
+            if not any([x for x in itercomps0(comp.comps)
                         if x.get_type() in comp_child[comp_type]]):
                 error(ctx.start.line, 'no child components in {}', comp_type)
         # field endian check
         if comp_type in ('RegFile', 'Register'):
-            field_endian = self.curr_comp.validate_fields()
-            if ctx.anonymous_component_inst_elems() is None:
-                par_field_endian = self.curr_comp.parent.field_endian
-                if par_field_endian is None:
-                    self.curr_comp.parent.field_endian = field_endian
-                elif par_field_endian != field_endian:
-                    error(ctx.start.line, 'mixed lsb0/msb0 in {}',
-                          comp_type)
+            field_endian = comp.validate_fields()
+            par_field_endian = comp.parent.field_endian
+            if par_field_endian is None:
+                comp.parent.field_endian = field_endian
+            elif par_field_endian != field_endian:
+                if (comp.parent.get_type() == 'AddrMap' and
+                   (comp.parent.msb0 or comp.parent.lsb0)):
+                    msg = 'explicit {} does not match inferred order from components'.format(
+                          'msb0' if comp.parent.msb0 else 'lsb0')
+                else:
+                    msg = 'mixed lsb0/msb0'
+                error(ctx.start.line, msg+' in {} {}', comp.parent.get_type(),
+                      comp.parent.def_id if comp.parent.inst_id is None else comp.parent.inst_id)
+        # assign implicit order to addrmap
+        if comp_type == 'AddrMap':
+            comp.msb0 = comp.field_endian == 'msb0'
+            comp.lsb0 = comp.field_endian == 'lsb0'
         # exit scope
-        self.curr_comp = self.curr_comp.parent
+        self.curr_comp = comp.parent
         self.pop_scope()
 
     # Enter a parse tree produced by
@@ -332,13 +343,18 @@ class Listener(SystemRDLListener):
                       'component \'{}\' definition not found', comp_name)
             parent = self.curr_comp
         comp_type = comp.get_type()
-        # field endian check (anon handled in exit comp_def)
+        # field endian check (anon and def handled in exit comp_def)
         if comp_type in ('RegFile', 'Register') and not anon:
             if parent.field_endian is None:
                 parent.field_endian = comp.field_endian
             elif parent.field_endian != comp.field_endian:
-                error(ctx.start.line, 'mixed lsb0/msb0 in {}',
-                      comp_type)
+                if parent.get_type() == 'AddrMap' and (parent.msb0 or parent.lsb0):
+                    msg = 'explicit {} does not match inferred order from components'.format(
+                          'msb0' if parent.msb0 else 'lsb0')
+                else:
+                    msg = 'mixed lsb0/msb0'
+                error(ctx.start.line, msg+' in {} {}', comp.parent.get_type(),
+                      comp.parent.def_id if comp.parent.inst_id is None else comp.parent.inst_id)
         # instatiation
         if ctx.array() is None:
             inst = comp if anon else comp.customcopy()

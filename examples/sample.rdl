@@ -27,12 +27,12 @@ addrmap am1 {
         hw = r;
         user_prop1;
         reset = 32'd0;
-      } data_field[31:0];
+      } data_field[23:8];
       field {
         encode = e1;
         name = "df2";
         fieldwidth = 2;
-      } df2[2];
+      } df2[1:0];
     } data[1] @0x0 +=0x2;
   };
   rf rf1;

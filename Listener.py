@@ -294,8 +294,17 @@ class Listener(SystemRDLListener):
         if comp_type in comp_child:
             if not any([x for x in self.curr_comp.comps if match(x, comp_type)]):
                 error(ctx.start.line, 'no child components in {}', comp_type)
-        if ctx.anonymous_component_inst_elems() is None and comp_type == 'Register':
-            self.curr_comp.validate_fields()
+        # field endian check
+        if comp_type in ('RegFile', 'Register'):
+            field_endian = self.curr_comp.validate_fields()
+            if ctx.anonymous_component_inst_elems() is None:
+                par_field_endian = self.curr_comp.parent.field_endian
+                if par_field_endian is None:
+                    self.curr_comp.parent.field_endian = field_endian
+                elif par_field_endian != field_endian:
+                    error(ctx.start.line, 'mixed lsb0/msb0 in {}',
+                          comp_type)
+        # exit scope
         self.curr_comp = self.curr_comp.parent
         self.pop_scope()
 
@@ -308,7 +317,8 @@ class Listener(SystemRDLListener):
 
     # Enter a parse tree produced by SystemRDLParser#component_inst_elem.
     def enterComponent_inst_elem(self, ctx):
-        if self.rule_names[ctx.parentCtx.getRuleIndex()] == 'anonymous_component_inst_elems':
+        anon = self.rule_names[ctx.parentCtx.getRuleIndex()] == 'anonymous_component_inst_elems'
+        if anon:
             comp = self.curr_comp
             parent = self.curr_comp.parent
         else:   # if explicit_component_inst
@@ -320,13 +330,20 @@ class Listener(SystemRDLListener):
                       'component \'{}\' definition not found', comp_name)
             parent = self.curr_comp
         comp_type = comp.get_type()
+        # field endian check (anon handled in exit comp_def)
+        if comp_type in ('RegFile', 'Register') and not anon:
+            if parent.field_endian is None:
+                parent.field_endian = comp.field_endian
+            elif parent.field_endian != comp.field_endian:
+                error(ctx.start.line, 'mixed lsb0/msb0 in {}',
+                      comp_type)
+        # instatiation
         if ctx.array() is None:
-            inst = comp.customcopy()
+            inst = comp if anon else comp.customcopy()
         else:
             indctx = ctx.getChild(1).getChild
             # array indices
             if ctx.getChild(1).getChild(2).getText() == ':':
-                inst = comp.customcopy()
                 # (5.1.2.a.3.ii)
                 if comp_type != 'Field':    # Signal too??
                     error(ctx.start.line, 'array indices not allowed for {}', comp_type)
@@ -334,16 +351,19 @@ class Listener(SystemRDLListener):
                 low = extract_num(indctx(3).getText(), indctx(3).start.line)
                 if not isinstance(high, int) or not isinstance(low, int):
                     error(ctx.start.line, 'array indices should be unsizedNumeric')
+                inst = comp if anon else comp.customcopy()
                 inst.position = (high, low)
+                (high, low) = (high, low) if high>low else (low, high)
                 size = high - low + 1
             else:
                 size = extract_num(indctx(1).getText(), indctx(1).start.line)
                 if not isinstance(size, int):
                     error(ctx.start.line, 'array size should be unsizedNumeric')
                 if comp_type in ('Field', 'Signal'):
-                    inst = comp.customcopy()
+                    inst = comp if anon else comp.customcopy()
                 else:
-                    inst = [comp.customcopy() for i in range(size)]
+                    inst0 = [comp if anon else comp.customcopy()]
+                    inst = inst0 + [comp.customcopy() for i in range(size-1)]
             if comp_type in ('Field', 'Signal'):
                 width = {'Field': 'fieldwidth',
                          'Signal': 'signalwidth'}[comp_type]
@@ -356,12 +376,17 @@ class Listener(SystemRDLListener):
                 if i.name is None:
                     i.name = inst_id
                 i.line = ctx.start.line
+                if comp_type == 'AddrMap':
+                    i.instantiated = True
         else:
             inst.inst_id = inst_id
             inst.parent = parent
             if inst.name is None:
                 inst.name = inst_id
             inst.line = ctx.start.line
+            if comp_type == 'AddrMap':
+                inst.instantiated = True
+        # set properties set with instatiation
         for prop in ['reset', 'at_addr', 'inc_addr', 'align_addr']:
             value = self.get_post_inst_prop_value(ctx, prop)
             if value is not None:

@@ -26,7 +26,7 @@ addrmap am1 {
         sw = rw;
         hw = r;
         user_prop1;
-        reset = 32'd0;
+        reset = 16'd0;
       } data_field[23:8];
       field {
         encode = e1;
@@ -40,5 +40,5 @@ addrmap am1 {
   rf1.data->accesswidth = 32;
   rf1.data->user_prop1 = "hello";
   rf1.data[0].df2->name="data2";
-  rf1.data[0].data_field->reset=32'd1;
+  rf1.data[0].data_field->reset=16'd1;
 };

@@ -414,7 +414,15 @@ class Field(Component):
         super().post_validate()
         invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
         if (self.sw, self.hw) in invalid_accesses:     # (Table 9)
-            exit('Error: Invalid field access pair.')
+            error(self.line, 'invalid field access pair in Field {}',
+                  self.inst_id)
+        # reset size
+        if isinstance(self.reset, tuple) and self.reset[0] != self.fieldwidth:
+            error(self.line, 'reset width does not match fieldwidth in Field {}',
+                  self.inst_id)
+        if (isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth):
+            error(self.line, 'reset value signal width does not match fieldwidth in Field {}',
+                  self.inst_id)
 
 
 class Signal(Component):

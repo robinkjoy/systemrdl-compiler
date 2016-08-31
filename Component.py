@@ -1,9 +1,8 @@
 import copy
 from functools import reduce
-
-
-def error(line, msg, *args):
-    exit('error:{}: '.format(line) + msg.format(*args))
+from Common import error
+from Common import itercomps
+from Common import itercomps0
 
 
 def is_power_2(number):
@@ -156,8 +155,7 @@ class Component:
         if comp_type not in allowed_insts[parent_type]:
             error(line, '{} instance not allowed in {}', comp_type, parent_type)
         inst_id = inst[0].inst_id if isinstance(inst, list) else inst.inst_id
-        if any([x for x in self.comps if (isinstance(x, list) and x[0].inst_id == inst_id)
-            or (isinstance(x, Component) and x.inst_id == inst_id)]):
+        if any([x for x in itercomps0(self.comps) if x.inst_id == inst_id]):
             error(line, 'all instance names should be unique within a scope')
         self.comps.append(inst)
 
@@ -186,13 +184,8 @@ class Component:
                 error(self.line, 'Properties {} should be exclusive in {} {}',
                       ', '.join(exs), self.get_type(),
                       self.def_id if self.inst_id is None else self.inst_id)
-        for comp in self.comps:
-            if isinstance(comp, list):
-                for c in comp:
-                    c.post_validate()
-            else:
-                comp.post_validate()
-
+        for comp in itercomps(self.comps):
+            comp.post_validate()
 
 
 class AddrMap(Component):

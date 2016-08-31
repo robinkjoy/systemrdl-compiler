@@ -2,10 +2,8 @@ import re
 from parser.SystemRDLListener import SystemRDLListener
 from parser.SystemRDLParser import SystemRDLParser
 import Component
-
-
-def error(line, msg, *args):
-    exit('error:{}: '.format(line) + msg.format(*args))
+from Common import error
+from Common import itercomps0
 
 
 def extract_num(string, line):
@@ -18,6 +16,14 @@ def extract_num(string, line):
         error(line, 'first position of value should not be \'_\'.')
     base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1].lower()]
     return (int(string[0]), int(string[2].translate({ord('_'): None}), base))
+
+
+def itercomp(comp):
+    if isinstance(comp, list):
+        for c in comp:
+            yield c
+    else:
+        yield comp
 
 
 class Listener(SystemRDLListener):
@@ -286,13 +292,9 @@ class Listener(SystemRDLListener):
             'AddrMap': ['AddrMap', 'RegFile', 'Register']
         }
         comp_type = self.curr_comp.get_type()
-        def match(comp, ctype):
-            if isinstance(comp, list):
-                return comp[0].get_type() in comp_child[ctype]
-            else:
-                return comp.get_type() in comp_child[ctype]
         if comp_type in comp_child:
-            if not any([x for x in self.curr_comp.comps if match(x, comp_type)]):
+            if not any([x for x in itercomps0(self.curr_comp.comps)
+                        if x.get_type() in comp_child[comp_type]]):
                 error(ctx.start.line, 'no child components in {}', comp_type)
         # field endian check
         if comp_type in ('RegFile', 'Register'):
@@ -369,32 +371,20 @@ class Listener(SystemRDLListener):
                          'Signal': 'signalwidth'}[comp_type]
                 inst.set_property(width, size, ctx.start.line, [], False)
         inst_id = ctx.getChild(0).getText()
-        if isinstance(inst, list):
-            for i in inst:
-                i.inst_id = inst_id
-                i.parent = parent
-                if i.name is None:
-                    i.name = inst_id
-                i.line = ctx.start.line
-                if comp_type == 'AddrMap':
-                    i.instantiated = True
-        else:
-            inst.inst_id = inst_id
-            inst.parent = parent
-            if inst.name is None:
-                inst.name = inst_id
-            inst.line = ctx.start.line
+        for i in itercomp(inst):
+            i.inst_id = inst_id
+            i.parent = parent
+            if i.name is None:
+                i.name = inst_id
+            i.line = ctx.start.line
             if comp_type == 'AddrMap':
-                inst.instantiated = True
+                i.instantiated = True
         # set properties set with instatiation
         for prop in ['reset', 'at_addr', 'inc_addr', 'align_addr']:
             value = self.get_post_inst_prop_value(ctx, prop)
             if value is not None:
-                if isinstance(inst, list):
-                    for x in inst:
-                        x.set_property(prop, value, ctx.start.line, [], None)
-                else:
-                    inst.set_property(prop, value, ctx.start.line, [], None)
+                for x in itercomp(inst):
+                    x.set_property(prop, value, ctx.start.line, [], None)
         # if in root, component is signal
         if parent is None:
             self.add_root_sig_inst(inst, ctx.start.line)
@@ -461,10 +451,8 @@ class Listener(SystemRDLListener):
         else:
             value = self.extract_rhs_value(ctx.getChild(2), prop)
         self.check_property_already_set(inst, prop, ctx.start.line)
-        if isinstance(inst, list):
-            [x.set_property(prop, value, ctx.start.line, self.user_def_props, True) for x in inst]
-        else:
-            inst.set_property(prop, value, ctx.start.line, self.user_def_props, True)
+        for x in itercomp(inst):
+            x.set_property(prop, value, ctx.start.line, self.user_def_props, True)
 
     # Enter a parse tree produced by SystemRDLParser#enum_def.
     def enterEnum_def(self, ctx):

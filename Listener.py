@@ -211,8 +211,6 @@ class Listener(SystemRDLListener):
         self.addrmaps = [x for x in self.definitions[0]
                          if isinstance(x, Component.AddrMap)
                          and not x.instantiated]
-        for addrmap in self.addrmaps:
-            addrmap.post_validate()
 
     # Enter a parse tree produced by SystemRDLParser#property_body.
     def enterProperty_body(self, ctx):

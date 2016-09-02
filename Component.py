@@ -1,6 +1,7 @@
 import copy
 from functools import reduce
 from Common import error
+from Common import warn
 from Common import itercomps
 from Common import itercomps0
 
@@ -41,6 +42,11 @@ class Component:
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         value = self.validate_property(prop, value, line, user_def_props, is_dynamic)
         setattr(self, prop, value)
+        exc = [x for x in self.EXCLUSIVES if prop in x]
+        if exc and sum(map(true_or_assigned, [getattr(self, x) for x in exc[0]])) > 1:
+            error(self.line, 'Properties {} should be exclusive in {} {}',
+                  ', '.join(exc), self.get_type(),
+                  self.def_id if self.inst_id is None else self.inst_id)
 
     def get_default(self, prop, defaults):
         def get_default_value(prop, defaults):
@@ -177,15 +183,6 @@ class Component:
             else:
                 comp.pprint(level+1)
         print(' '*level*indent+'}')
-
-    def post_validate(self):
-        for exs in self.EXCLUSIVES:
-            if sum(map(true_or_assigned, [getattr(self, ex) for ex in exs])) > 1:
-                error(self.line, 'Properties {} should be exclusive in {} {}',
-                      ', '.join(exs), self.get_type(),
-                      self.def_id if self.inst_id is None else self.inst_id)
-        for comp in itercomps(self.comps):
-            comp.post_validate()
 
 
 class AddrMap(Component):
@@ -410,19 +407,20 @@ class Field(Component):
             error(line, 'Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
         return True
 
-    def post_validate(self):
-        super().post_validate()
+    def set_property(self, prop, value, line, user_def_props, is_dynamic):
+        super().set_property(prop, value, line, user_def_props, is_dynamic)
         invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
-        if (self.sw, self.hw) in invalid_accesses:     # (Table 9)
+        if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:     # (Table 9)
             error(self.line, 'invalid field access pair in Field {}',
                   self.inst_id)
         # reset size
-        if isinstance(self.reset, tuple) and self.reset[0] != self.fieldwidth:
-            error(self.line, 'reset width does not match fieldwidth in Field {}',
-                  self.inst_id)
-        if (isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth):
-            error(self.line, 'reset value signal width does not match fieldwidth in Field {}',
-                  self.inst_id)
+        if prop == 'reset' and self.fieldwidth is not None:
+            if isinstance(self.reset, tuple) and self.reset[0] != self.fieldwidth:
+                warn(self.line, 'reset width does not match fieldwidth in Field {}',
+                      self.inst_id)
+            if (isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth):
+                warn(self.line, 'reset value signal width does not match fieldwidth in Field {}',
+                      self.inst_id)
 
 
 class Signal(Component):

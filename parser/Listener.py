@@ -1,6 +1,6 @@
 import re
-from parser.SystemRDLListener import SystemRDLListener
-from parser.SystemRDLParser import SystemRDLParser
+from parser.antlr.SystemRDLListener import SystemRDLListener
+from parser.antlr.SystemRDLParser import SystemRDLParser
 import Component
 from Common import error
 from Common import itercomps0

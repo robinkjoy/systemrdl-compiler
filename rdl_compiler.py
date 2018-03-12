@@ -1,9 +1,9 @@
 import sys
 import antlr4
-from parser.SystemRDLLexer import SystemRDLLexer
-from parser.SystemRDLParser import SystemRDLParser
-from Listener import Listener
-from CustomErrorListener import CustomErrorListener
+from parser.antlr.SystemRDLLexer import SystemRDLLexer
+from parser.antlr.SystemRDLParser import SystemRDLParser
+from parser.Listener import Listener
+from parser.CustomErrorListener import CustomErrorListener
 
 
 def main(argv):

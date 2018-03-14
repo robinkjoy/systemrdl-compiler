@@ -1,11 +1,13 @@
-# Generated from SystemRDL.g4 by ANTLR 4.5.3
+# Generated from SystemRDL.g4 by ANTLR 4.7.1
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
+from typing.io import TextIO
+import sys
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\u0085")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\u0085")
         buf.write("\u01ad\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
@@ -49,18 +51,18 @@ def serializedATN():
         buf.write("#\3#\5#\u01a4\n#\3#\3#\3$\3$\3$\3$\3$\3$\2\2%\2\4\6\b")
         buf.write("\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668")
         buf.write(":<>@BDF\2\b\3\2\t\16\4\2\n\r\22\22\3\2\t\r\3\2im\4\2q")
-        buf.write("q\u0084\u0084\3\2\27\30\u0212\2O\3\2\2\2\4T\3\2\2\2\6")
-        buf.write("`\3\2\2\2\bc\3\2\2\2\nm\3\2\2\2\fw\3\2\2\2\16\u0083\3")
-        buf.write("\2\2\2\20\u0085\3\2\2\2\22\u0087\3\2\2\2\24\u0089\3\2")
-        buf.write("\2\2\26\u008b\3\2\2\2\30\u008d\3\2\2\2\32\u00a3\3\2\2")
-        buf.write("\2\34\u00b8\3\2\2\2\36\u00c2\3\2\2\2 \u00d6\3\2\2\2\"")
-        buf.write("\u00de\3\2\2\2$\u00ea\3\2\2\2&\u00fa\3\2\2\2(\u00fc\3")
-        buf.write("\2\2\2*\u0107\3\2\2\2,\u0109\3\2\2\2.\u0113\3\2\2\2\60")
-        buf.write("\u0115\3\2\2\2\62\u0122\3\2\2\2\64\u0170\3\2\2\2\66\u0180")
-        buf.write("\3\2\2\28\u0182\3\2\2\2:\u0184\3\2\2\2<\u0186\3\2\2\2")
-        buf.write(">\u0188\3\2\2\2@\u018a\3\2\2\2B\u018f\3\2\2\2D\u0198\3")
-        buf.write("\2\2\2F\u01a7\3\2\2\2HN\5\30\r\2IN\5@!\2JN\5\32\16\2K")
-        buf.write("N\5&\24\2LN\5\4\3\2MH\3\2\2\2MI\3\2\2\2MJ\3\2\2\2MK\3")
+        buf.write("q\u0084\u0084\3\2\27\30\2\u0212\2O\3\2\2\2\4T\3\2\2\2")
+        buf.write("\6`\3\2\2\2\bc\3\2\2\2\nm\3\2\2\2\fw\3\2\2\2\16\u0083")
+        buf.write("\3\2\2\2\20\u0085\3\2\2\2\22\u0087\3\2\2\2\24\u0089\3")
+        buf.write("\2\2\2\26\u008b\3\2\2\2\30\u008d\3\2\2\2\32\u00a3\3\2")
+        buf.write("\2\2\34\u00b8\3\2\2\2\36\u00c2\3\2\2\2 \u00d6\3\2\2\2")
+        buf.write("\"\u00de\3\2\2\2$\u00ea\3\2\2\2&\u00fa\3\2\2\2(\u00fc")
+        buf.write("\3\2\2\2*\u0107\3\2\2\2,\u0109\3\2\2\2.\u0113\3\2\2\2")
+        buf.write("\60\u0115\3\2\2\2\62\u0122\3\2\2\2\64\u0170\3\2\2\2\66")
+        buf.write("\u0180\3\2\2\28\u0182\3\2\2\2:\u0184\3\2\2\2<\u0186\3")
+        buf.write("\2\2\2>\u0188\3\2\2\2@\u018a\3\2\2\2B\u018f\3\2\2\2D\u0198")
+        buf.write("\3\2\2\2F\u01a7\3\2\2\2HN\5\30\r\2IN\5@!\2JN\5\32\16\2")
+        buf.write("KN\5&\24\2LN\5\4\3\2MH\3\2\2\2MI\3\2\2\2MJ\3\2\2\2MK\3")
         buf.write("\2\2\2ML\3\2\2\2NQ\3\2\2\2OM\3\2\2\2OP\3\2\2\2PR\3\2\2")
         buf.write("\2QO\3\2\2\2RS\7\2\2\3S\3\3\2\2\2TU\7\3\2\2UV\5:\36\2")
         buf.write("VW\7t\2\2WX\5\6\4\2XY\7u\2\2YZ\7|\2\2Z\5\3\2\2\2[_\5\b")
@@ -482,9 +484,9 @@ class SystemRDLParser ( Parser ):
     INST_ID=130
     PROPERTY=131
 
-    def __init__(self, input:TokenStream):
-        super().__init__(input)
-        self.checkVersion("4.5.3")
+    def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
+        super().__init__(input, output)
+        self.checkVersion("4.7.1")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
 
@@ -560,7 +562,7 @@ class SystemRDLParser ( Parser ):
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << SystemRDLParser.T__0) | (1 << SystemRDLParser.T__2) | (1 << SystemRDLParser.T__6) | (1 << SystemRDLParser.T__7) | (1 << SystemRDLParser.T__8) | (1 << SystemRDLParser.T__9) | (1 << SystemRDLParser.T__10) | (1 << SystemRDLParser.T__16) | (1 << SystemRDLParser.T__17) | (1 << SystemRDLParser.T__18) | (1 << SystemRDLParser.T__19) | (1 << SystemRDLParser.T__20) | (1 << SystemRDLParser.T__21) | (1 << SystemRDLParser.T__22) | (1 << SystemRDLParser.T__23) | (1 << SystemRDLParser.T__24) | (1 << SystemRDLParser.T__25) | (1 << SystemRDLParser.T__26) | (1 << SystemRDLParser.T__27) | (1 << SystemRDLParser.T__28) | (1 << SystemRDLParser.T__29) | (1 << SystemRDLParser.T__30) | (1 << SystemRDLParser.T__31) | (1 << SystemRDLParser.T__32) | (1 << SystemRDLParser.T__33) | (1 << SystemRDLParser.T__34) | (1 << SystemRDLParser.T__35) | (1 << SystemRDLParser.T__36) | (1 << SystemRDLParser.T__37) | (1 << SystemRDLParser.T__38) | (1 << SystemRDLParser.T__39) | (1 << SystemRDLParser.T__40) | (1 << SystemRDLParser.T__41) | (1 << SystemRDLParser.T__42) | (1 << SystemRDLParser.T__43) | (1 << SystemRDLParser.T__44) | (1 << SystemRDLParser.T__45) | (1 << SystemRDLParser.T__46) | (1 << SystemRDLParser.T__47) | (1 << SystemRDLParser.T__48) | (1 << SystemRDLParser.T__49) | (1 << SystemRDLParser.T__50) | (1 << SystemRDLParser.T__51) | (1 << SystemRDLParser.T__52) | (1 << SystemRDLParser.T__53) | (1 << SystemRDLParser.T__54) | (1 << SystemRDLParser.T__55) | (1 << SystemRDLParser.T__56) | (1 << SystemRDLParser.T__57) | (1 << SystemRDLParser.T__58) | (1 << SystemRDLParser.T__59) | (1 << SystemRDLParser.T__60) | (1 << SystemRDLParser.T__61) | (1 << SystemRDLParser.T__62))) != 0) or ((((_la - 64)) & ~0x3f) == 0 and ((1 << (_la - 64)) & ((1 << (SystemRDLParser.T__63 - 64)) | (1 << (SystemRDLParser.T__64 - 64)) | (1 << (SystemRDLParser.T__65 - 64)) | (1 << (SystemRDLParser.T__66 - 64)) | (1 << (SystemRDLParser.T__67 - 64)) | (1 << (SystemRDLParser.T__68 - 64)) | (1 << (SystemRDLParser.T__69 - 64)) | (1 << (SystemRDLParser.T__70 - 64)) | (1 << (SystemRDLParser.T__71 - 64)) | (1 << (SystemRDLParser.T__72 - 64)) | (1 << (SystemRDLParser.T__73 - 64)) | (1 << (SystemRDLParser.T__74 - 64)) | (1 << (SystemRDLParser.T__75 - 64)) | (1 << (SystemRDLParser.T__76 - 64)) | (1 << (SystemRDLParser.T__77 - 64)) | (1 << (SystemRDLParser.T__78 - 64)) | (1 << (SystemRDLParser.T__79 - 64)) | (1 << (SystemRDLParser.T__80 - 64)) | (1 << (SystemRDLParser.T__81 - 64)) | (1 << (SystemRDLParser.T__82 - 64)) | (1 << (SystemRDLParser.T__83 - 64)) | (1 << (SystemRDLParser.T__84 - 64)) | (1 << (SystemRDLParser.T__85 - 64)) | (1 << (SystemRDLParser.T__86 - 64)) | (1 << (SystemRDLParser.T__87 - 64)) | (1 << (SystemRDLParser.T__88 - 64)) | (1 << (SystemRDLParser.T__89 - 64)) | (1 << (SystemRDLParser.T__90 - 64)) | (1 << (SystemRDLParser.T__91 - 64)) | (1 << (SystemRDLParser.T__92 - 64)) | (1 << (SystemRDLParser.T__93 - 64)) | (1 << (SystemRDLParser.T__102 - 64)) | (1 << (SystemRDLParser.T__103 - 64)) | (1 << (SystemRDLParser.T__104 - 64)) | (1 << (SystemRDLParser.T__105 - 64)) | (1 << (SystemRDLParser.T__106 - 64)) | (1 << (SystemRDLParser.ID - 64)))) != 0) or _la==SystemRDLParser.INST_ID:
                 self.state = 75
-                self._errHandler.sync(self);
+                self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
                 if la_ == 1:
                     self.state = 70
@@ -718,19 +720,20 @@ class SystemRDLParser ( Parser ):
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << SystemRDLParser.T__1) | (1 << SystemRDLParser.T__2) | (1 << SystemRDLParser.T__5))) != 0):
                 self.state = 92
+                self._errHandler.sync(self)
                 token = self._input.LA(1)
                 if token in [SystemRDLParser.T__1]:
                     self.state = 89
                     self.property_type()
-
+                    pass
                 elif token in [SystemRDLParser.T__5]:
                     self.state = 90
                     self.property_usage()
-
+                    pass
                 elif token in [SystemRDLParser.T__2]:
                     self.state = 91
                     self.property_default()
-
+                    pass
                 else:
                     raise NoViableAltException(self)
 
@@ -799,23 +802,24 @@ class SystemRDLParser ( Parser ):
             self.state = 98
             self.match(SystemRDLParser.EQ)
             self.state = 103
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.T__13]:
                 self.state = 99
                 self.property_string_type()
-
+                pass
             elif token in [SystemRDLParser.T__14]:
                 self.state = 100
                 self.property_number_type()
-
+                pass
             elif token in [SystemRDLParser.T__12]:
                 self.state = 101
                 self.property_boolean_type()
-
+                pass
             elif token in [SystemRDLParser.T__7, SystemRDLParser.T__8, SystemRDLParser.T__9, SystemRDLParser.T__10, SystemRDLParser.T__15]:
                 self.state = 102
                 self.property_ref_type()
-
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -874,23 +878,24 @@ class SystemRDLParser ( Parser ):
             self.state = 108
             self.match(SystemRDLParser.EQ)
             self.state = 113
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.STR]:
                 self.state = 109
                 self.string()
-
+                pass
             elif token in [SystemRDLParser.NUM]:
                 self.state = 110
                 self.num()
-
+                pass
             elif token in [SystemRDLParser.T__3]:
                 self.state = 111
                 self.match(SystemRDLParser.T__3)
-
+                pass
             elif token in [SystemRDLParser.T__4]:
                 self.state = 112
                 self.match(SystemRDLParser.T__4)
-
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -1011,6 +1016,7 @@ class SystemRDLParser ( Parser ):
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << SystemRDLParser.T__6) | (1 << SystemRDLParser.T__7) | (1 << SystemRDLParser.T__8) | (1 << SystemRDLParser.T__9) | (1 << SystemRDLParser.T__10) | (1 << SystemRDLParser.T__11))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
+                self._errHandler.reportMatch(self)
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
@@ -1164,6 +1170,7 @@ class SystemRDLParser ( Parser ):
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << SystemRDLParser.T__7) | (1 << SystemRDLParser.T__8) | (1 << SystemRDLParser.T__9) | (1 << SystemRDLParser.T__10) | (1 << SystemRDLParser.T__15))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
+                self._errHandler.reportMatch(self)
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
@@ -1250,13 +1257,15 @@ class SystemRDLParser ( Parser ):
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << SystemRDLParser.T__6) | (1 << SystemRDLParser.T__7) | (1 << SystemRDLParser.T__8) | (1 << SystemRDLParser.T__9) | (1 << SystemRDLParser.T__10))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
+                self._errHandler.reportMatch(self)
                 self.consume()
             self.state = 142
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.ID, SystemRDLParser.INST_ID]:
                 self.state = 140
                 self.s_id()
-
+                pass
             elif token in [SystemRDLParser.LBRACE]:
                 pass
             else:
@@ -1269,7 +1278,7 @@ class SystemRDLParser ( Parser ):
             _la = self._input.LA(1)
             while ((((_la - 3)) & ~0x3f) == 0 and ((1 << (_la - 3)) & ((1 << (SystemRDLParser.T__2 - 3)) | (1 << (SystemRDLParser.T__6 - 3)) | (1 << (SystemRDLParser.T__7 - 3)) | (1 << (SystemRDLParser.T__8 - 3)) | (1 << (SystemRDLParser.T__9 - 3)) | (1 << (SystemRDLParser.T__10 - 3)) | (1 << (SystemRDLParser.T__16 - 3)) | (1 << (SystemRDLParser.T__17 - 3)) | (1 << (SystemRDLParser.T__18 - 3)) | (1 << (SystemRDLParser.T__19 - 3)) | (1 << (SystemRDLParser.T__20 - 3)) | (1 << (SystemRDLParser.T__21 - 3)) | (1 << (SystemRDLParser.T__22 - 3)) | (1 << (SystemRDLParser.T__23 - 3)) | (1 << (SystemRDLParser.T__24 - 3)) | (1 << (SystemRDLParser.T__25 - 3)) | (1 << (SystemRDLParser.T__26 - 3)) | (1 << (SystemRDLParser.T__27 - 3)) | (1 << (SystemRDLParser.T__28 - 3)) | (1 << (SystemRDLParser.T__29 - 3)) | (1 << (SystemRDLParser.T__30 - 3)) | (1 << (SystemRDLParser.T__31 - 3)) | (1 << (SystemRDLParser.T__32 - 3)) | (1 << (SystemRDLParser.T__33 - 3)) | (1 << (SystemRDLParser.T__34 - 3)) | (1 << (SystemRDLParser.T__35 - 3)) | (1 << (SystemRDLParser.T__36 - 3)) | (1 << (SystemRDLParser.T__37 - 3)) | (1 << (SystemRDLParser.T__38 - 3)) | (1 << (SystemRDLParser.T__39 - 3)) | (1 << (SystemRDLParser.T__40 - 3)) | (1 << (SystemRDLParser.T__41 - 3)) | (1 << (SystemRDLParser.T__42 - 3)) | (1 << (SystemRDLParser.T__43 - 3)) | (1 << (SystemRDLParser.T__44 - 3)) | (1 << (SystemRDLParser.T__45 - 3)) | (1 << (SystemRDLParser.T__46 - 3)) | (1 << (SystemRDLParser.T__47 - 3)) | (1 << (SystemRDLParser.T__48 - 3)) | (1 << (SystemRDLParser.T__49 - 3)) | (1 << (SystemRDLParser.T__50 - 3)) | (1 << (SystemRDLParser.T__51 - 3)) | (1 << (SystemRDLParser.T__52 - 3)) | (1 << (SystemRDLParser.T__53 - 3)) | (1 << (SystemRDLParser.T__54 - 3)) | (1 << (SystemRDLParser.T__55 - 3)) | (1 << (SystemRDLParser.T__56 - 3)) | (1 << (SystemRDLParser.T__57 - 3)) | (1 << (SystemRDLParser.T__58 - 3)) | (1 << (SystemRDLParser.T__59 - 3)) | (1 << (SystemRDLParser.T__60 - 3)) | (1 << (SystemRDLParser.T__61 - 3)) | (1 << (SystemRDLParser.T__62 - 3)) | (1 << (SystemRDLParser.T__63 - 3)) | (1 << (SystemRDLParser.T__64 - 3)) | (1 << (SystemRDLParser.T__65 - 3)))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (SystemRDLParser.T__66 - 67)) | (1 << (SystemRDLParser.T__67 - 67)) | (1 << (SystemRDLParser.T__68 - 67)) | (1 << (SystemRDLParser.T__69 - 67)) | (1 << (SystemRDLParser.T__70 - 67)) | (1 << (SystemRDLParser.T__71 - 67)) | (1 << (SystemRDLParser.T__72 - 67)) | (1 << (SystemRDLParser.T__73 - 67)) | (1 << (SystemRDLParser.T__74 - 67)) | (1 << (SystemRDLParser.T__75 - 67)) | (1 << (SystemRDLParser.T__76 - 67)) | (1 << (SystemRDLParser.T__77 - 67)) | (1 << (SystemRDLParser.T__78 - 67)) | (1 << (SystemRDLParser.T__79 - 67)) | (1 << (SystemRDLParser.T__80 - 67)) | (1 << (SystemRDLParser.T__81 - 67)) | (1 << (SystemRDLParser.T__82 - 67)) | (1 << (SystemRDLParser.T__83 - 67)) | (1 << (SystemRDLParser.T__84 - 67)) | (1 << (SystemRDLParser.T__85 - 67)) | (1 << (SystemRDLParser.T__86 - 67)) | (1 << (SystemRDLParser.T__87 - 67)) | (1 << (SystemRDLParser.T__88 - 67)) | (1 << (SystemRDLParser.T__89 - 67)) | (1 << (SystemRDLParser.T__90 - 67)) | (1 << (SystemRDLParser.T__91 - 67)) | (1 << (SystemRDLParser.T__92 - 67)) | (1 << (SystemRDLParser.T__93 - 67)) | (1 << (SystemRDLParser.T__102 - 67)) | (1 << (SystemRDLParser.T__103 - 67)) | (1 << (SystemRDLParser.T__104 - 67)) | (1 << (SystemRDLParser.T__105 - 67)) | (1 << (SystemRDLParser.T__106 - 67)) | (1 << (SystemRDLParser.ID - 67)) | (1 << (SystemRDLParser.INST_ID - 67)))) != 0):
                 self.state = 149
-                self._errHandler.sync(self);
+                self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input,8,self._ctx)
                 if la_ == 1:
                     self.state = 145
@@ -1299,6 +1308,7 @@ class SystemRDLParser ( Parser ):
             self.state = 154
             self.match(SystemRDLParser.RBRACE)
             self.state = 156
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.T__16 or _la==SystemRDLParser.ID or _la==SystemRDLParser.INST_ID:
                 self.state = 155
@@ -1366,6 +1376,7 @@ class SystemRDLParser ( Parser ):
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 161
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.T__16:
                 self.state = 160
@@ -1373,6 +1384,7 @@ class SystemRDLParser ( Parser ):
 
 
             self.state = 164
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.T__17:
                 self.state = 163
@@ -1380,6 +1392,7 @@ class SystemRDLParser ( Parser ):
 
 
             self.state = 168
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.T__18:
                 self.state = 166
@@ -1455,6 +1468,7 @@ class SystemRDLParser ( Parser ):
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 182
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.T__16:
                 self.state = 181
@@ -1540,6 +1554,7 @@ class SystemRDLParser ( Parser ):
             self.state = 192
             self.s_id()
             self.state = 194
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.LSQ:
                 self.state = 193
@@ -1547,6 +1562,7 @@ class SystemRDLParser ( Parser ):
 
 
             self.state = 198
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.EQ:
                 self.state = 196
@@ -1556,6 +1572,7 @@ class SystemRDLParser ( Parser ):
 
 
             self.state = 202
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.AT:
                 self.state = 200
@@ -1565,6 +1582,7 @@ class SystemRDLParser ( Parser ):
 
 
             self.state = 206
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.INC:
                 self.state = 204
@@ -1574,6 +1592,7 @@ class SystemRDLParser ( Parser ):
 
 
             self.state = 210
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.MOD:
                 self.state = 208
@@ -1638,6 +1657,7 @@ class SystemRDLParser ( Parser ):
             self.state = 213
             self.num()
             self.state = 216
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.COLON:
                 self.state = 214
@@ -1718,6 +1738,7 @@ class SystemRDLParser ( Parser ):
                 _la = self._input.LA(1)
 
             self.state = 230
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.DREF:
                 self.state = 228
@@ -1778,6 +1799,7 @@ class SystemRDLParser ( Parser ):
             self.state = 232
             self.s_id()
             self.state = 237
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.LSQ:
                 self.state = 233
@@ -1837,7 +1859,7 @@ class SystemRDLParser ( Parser ):
         self.enterRule(localctx, 36, self.RULE_property_assign)
         try:
             self.state = 248
-            self._errHandler.sync(self);
+            self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,26,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
@@ -1956,6 +1978,7 @@ class SystemRDLParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.state = 261
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.T__102, SystemRDLParser.T__103, SystemRDLParser.T__104, SystemRDLParser.T__105, SystemRDLParser.T__106]:
                 self.enterOuterAlt(localctx, 1)
@@ -1963,12 +1986,13 @@ class SystemRDLParser ( Parser ):
                 self.property_modifier()
                 self.state = 254
                 self.s_property()
-
+                pass
             elif token in [SystemRDLParser.T__17, SystemRDLParser.T__20, SystemRDLParser.T__21, SystemRDLParser.T__22, SystemRDLParser.T__23, SystemRDLParser.T__24, SystemRDLParser.T__25, SystemRDLParser.T__26, SystemRDLParser.T__27, SystemRDLParser.T__28, SystemRDLParser.T__29, SystemRDLParser.T__30, SystemRDLParser.T__31, SystemRDLParser.T__32, SystemRDLParser.T__33, SystemRDLParser.T__34, SystemRDLParser.T__35, SystemRDLParser.T__36, SystemRDLParser.T__37, SystemRDLParser.T__38, SystemRDLParser.T__39, SystemRDLParser.T__40, SystemRDLParser.T__41, SystemRDLParser.T__42, SystemRDLParser.T__43, SystemRDLParser.T__44, SystemRDLParser.T__45, SystemRDLParser.T__46, SystemRDLParser.T__47, SystemRDLParser.T__48, SystemRDLParser.T__49, SystemRDLParser.T__50, SystemRDLParser.T__51, SystemRDLParser.T__52, SystemRDLParser.T__53, SystemRDLParser.T__54, SystemRDLParser.T__55, SystemRDLParser.T__56, SystemRDLParser.T__57, SystemRDLParser.T__58, SystemRDLParser.T__59, SystemRDLParser.T__60, SystemRDLParser.T__61, SystemRDLParser.T__62, SystemRDLParser.T__63, SystemRDLParser.T__64, SystemRDLParser.T__65, SystemRDLParser.T__66, SystemRDLParser.T__67, SystemRDLParser.T__68, SystemRDLParser.T__69, SystemRDLParser.T__70, SystemRDLParser.T__71, SystemRDLParser.T__72, SystemRDLParser.T__73, SystemRDLParser.T__74, SystemRDLParser.T__75, SystemRDLParser.T__76, SystemRDLParser.T__77, SystemRDLParser.T__78, SystemRDLParser.T__79, SystemRDLParser.T__80, SystemRDLParser.T__81, SystemRDLParser.T__82, SystemRDLParser.T__83, SystemRDLParser.T__84, SystemRDLParser.T__85, SystemRDLParser.T__86, SystemRDLParser.T__87, SystemRDLParser.T__88, SystemRDLParser.T__89, SystemRDLParser.T__90, SystemRDLParser.T__91, SystemRDLParser.T__92, SystemRDLParser.T__93, SystemRDLParser.ID, SystemRDLParser.INST_ID]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 256
                 self.s_property()
                 self.state = 259
+                self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if _la==SystemRDLParser.EQ:
                     self.state = 257
@@ -1977,7 +2001,7 @@ class SystemRDLParser ( Parser ):
                     self.property_assign_rhs()
 
 
-
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -2030,6 +2054,7 @@ class SystemRDLParser ( Parser ):
             self.state = 263
             self.instance_ref()
             self.state = 266
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.EQ:
                 self.state = 264
@@ -2088,29 +2113,30 @@ class SystemRDLParser ( Parser ):
         self.enterRule(localctx, 44, self.RULE_property_assign_rhs)
         try:
             self.state = 273
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.T__3, SystemRDLParser.T__4, SystemRDLParser.T__79, SystemRDLParser.T__80, SystemRDLParser.T__94, SystemRDLParser.T__95, SystemRDLParser.T__96, SystemRDLParser.T__97, SystemRDLParser.T__98, SystemRDLParser.T__99, SystemRDLParser.T__100, SystemRDLParser.T__101, SystemRDLParser.NUM, SystemRDLParser.STR]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 268
                 self.property_rvalue_constant()
-
+                pass
             elif token in [SystemRDLParser.T__19]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 269
                 self.match(SystemRDLParser.T__19)
                 self.state = 270
                 self.enum_body()
-
+                pass
             elif token in [SystemRDLParser.ID, SystemRDLParser.INST_ID]:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 271
                 self.instance_ref()
-
+                pass
             elif token in [SystemRDLParser.LBRACE]:
                 self.enterOuterAlt(localctx, 4)
                 self.state = 272
                 self.concat()
-
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -2228,17 +2254,18 @@ class SystemRDLParser ( Parser ):
         self.enterRule(localctx, 48, self.RULE_concat_elem)
         try:
             self.state = 288
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.ID, SystemRDLParser.INST_ID]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 286
                 self.instance_ref()
-
+                pass
             elif token in [SystemRDLParser.NUM]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 287
                 self.num()
-
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -2280,387 +2307,388 @@ class SystemRDLParser ( Parser ):
         self.enterRule(localctx, 50, self.RULE_s_property)
         try:
             self.state = 366
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.T__20]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 290
                 self.match(SystemRDLParser.T__20)
-
+                pass
             elif token in [SystemRDLParser.T__21]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 291
                 self.match(SystemRDLParser.T__21)
-
+                pass
             elif token in [SystemRDLParser.T__22]:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 292
                 self.match(SystemRDLParser.T__22)
-
+                pass
             elif token in [SystemRDLParser.T__23]:
                 self.enterOuterAlt(localctx, 4)
                 self.state = 293
                 self.match(SystemRDLParser.T__23)
-
+                pass
             elif token in [SystemRDLParser.T__24]:
                 self.enterOuterAlt(localctx, 5)
                 self.state = 294
                 self.match(SystemRDLParser.T__24)
-
+                pass
             elif token in [SystemRDLParser.T__25]:
                 self.enterOuterAlt(localctx, 6)
                 self.state = 295
                 self.match(SystemRDLParser.T__25)
-
+                pass
             elif token in [SystemRDLParser.T__26]:
                 self.enterOuterAlt(localctx, 7)
                 self.state = 296
                 self.match(SystemRDLParser.T__26)
-
+                pass
             elif token in [SystemRDLParser.T__27]:
                 self.enterOuterAlt(localctx, 8)
                 self.state = 297
                 self.match(SystemRDLParser.T__27)
-
+                pass
             elif token in [SystemRDLParser.T__28]:
                 self.enterOuterAlt(localctx, 9)
                 self.state = 298
                 self.match(SystemRDLParser.T__28)
-
+                pass
             elif token in [SystemRDLParser.T__29]:
                 self.enterOuterAlt(localctx, 10)
                 self.state = 299
                 self.match(SystemRDLParser.T__29)
-
+                pass
             elif token in [SystemRDLParser.T__30]:
                 self.enterOuterAlt(localctx, 11)
                 self.state = 300
                 self.match(SystemRDLParser.T__30)
-
+                pass
             elif token in [SystemRDLParser.T__31]:
                 self.enterOuterAlt(localctx, 12)
                 self.state = 301
                 self.match(SystemRDLParser.T__31)
-
+                pass
             elif token in [SystemRDLParser.T__32]:
                 self.enterOuterAlt(localctx, 13)
                 self.state = 302
                 self.match(SystemRDLParser.T__32)
-
+                pass
             elif token in [SystemRDLParser.T__33]:
                 self.enterOuterAlt(localctx, 14)
                 self.state = 303
                 self.match(SystemRDLParser.T__33)
-
+                pass
             elif token in [SystemRDLParser.T__34]:
                 self.enterOuterAlt(localctx, 15)
                 self.state = 304
                 self.match(SystemRDLParser.T__34)
-
+                pass
             elif token in [SystemRDLParser.T__35]:
                 self.enterOuterAlt(localctx, 16)
                 self.state = 305
                 self.match(SystemRDLParser.T__35)
-
+                pass
             elif token in [SystemRDLParser.T__36]:
                 self.enterOuterAlt(localctx, 17)
                 self.state = 306
                 self.match(SystemRDLParser.T__36)
-
+                pass
             elif token in [SystemRDLParser.T__37]:
                 self.enterOuterAlt(localctx, 18)
                 self.state = 307
                 self.match(SystemRDLParser.T__37)
-
+                pass
             elif token in [SystemRDLParser.T__38]:
                 self.enterOuterAlt(localctx, 19)
                 self.state = 308
                 self.match(SystemRDLParser.T__38)
-
+                pass
             elif token in [SystemRDLParser.T__39]:
                 self.enterOuterAlt(localctx, 20)
                 self.state = 309
                 self.match(SystemRDLParser.T__39)
-
+                pass
             elif token in [SystemRDLParser.T__40]:
                 self.enterOuterAlt(localctx, 21)
                 self.state = 310
                 self.match(SystemRDLParser.T__40)
-
+                pass
             elif token in [SystemRDLParser.T__41]:
                 self.enterOuterAlt(localctx, 22)
                 self.state = 311
                 self.match(SystemRDLParser.T__41)
-
+                pass
             elif token in [SystemRDLParser.T__42]:
                 self.enterOuterAlt(localctx, 23)
                 self.state = 312
                 self.match(SystemRDLParser.T__42)
-
+                pass
             elif token in [SystemRDLParser.T__43]:
                 self.enterOuterAlt(localctx, 24)
                 self.state = 313
                 self.match(SystemRDLParser.T__43)
-
+                pass
             elif token in [SystemRDLParser.T__44]:
                 self.enterOuterAlt(localctx, 25)
                 self.state = 314
                 self.match(SystemRDLParser.T__44)
-
+                pass
             elif token in [SystemRDLParser.T__45]:
                 self.enterOuterAlt(localctx, 26)
                 self.state = 315
                 self.match(SystemRDLParser.T__45)
-
+                pass
             elif token in [SystemRDLParser.T__46]:
                 self.enterOuterAlt(localctx, 27)
                 self.state = 316
                 self.match(SystemRDLParser.T__46)
-
+                pass
             elif token in [SystemRDLParser.T__47]:
                 self.enterOuterAlt(localctx, 28)
                 self.state = 317
                 self.match(SystemRDLParser.T__47)
-
+                pass
             elif token in [SystemRDLParser.T__48]:
                 self.enterOuterAlt(localctx, 29)
                 self.state = 318
                 self.match(SystemRDLParser.T__48)
-
+                pass
             elif token in [SystemRDLParser.T__49]:
                 self.enterOuterAlt(localctx, 30)
                 self.state = 319
                 self.match(SystemRDLParser.T__49)
-
+                pass
             elif token in [SystemRDLParser.T__50]:
                 self.enterOuterAlt(localctx, 31)
                 self.state = 320
                 self.match(SystemRDLParser.T__50)
-
+                pass
             elif token in [SystemRDLParser.T__51]:
                 self.enterOuterAlt(localctx, 32)
                 self.state = 321
                 self.match(SystemRDLParser.T__51)
-
+                pass
             elif token in [SystemRDLParser.T__52]:
                 self.enterOuterAlt(localctx, 33)
                 self.state = 322
                 self.match(SystemRDLParser.T__52)
-
+                pass
             elif token in [SystemRDLParser.T__53]:
                 self.enterOuterAlt(localctx, 34)
                 self.state = 323
                 self.match(SystemRDLParser.T__53)
-
+                pass
             elif token in [SystemRDLParser.T__54]:
                 self.enterOuterAlt(localctx, 35)
                 self.state = 324
                 self.match(SystemRDLParser.T__54)
-
+                pass
             elif token in [SystemRDLParser.T__55]:
                 self.enterOuterAlt(localctx, 36)
                 self.state = 325
                 self.match(SystemRDLParser.T__55)
-
+                pass
             elif token in [SystemRDLParser.T__56]:
                 self.enterOuterAlt(localctx, 37)
                 self.state = 326
                 self.match(SystemRDLParser.T__56)
-
+                pass
             elif token in [SystemRDLParser.T__57]:
                 self.enterOuterAlt(localctx, 38)
                 self.state = 327
                 self.match(SystemRDLParser.T__57)
-
+                pass
             elif token in [SystemRDLParser.T__58]:
                 self.enterOuterAlt(localctx, 39)
                 self.state = 328
                 self.match(SystemRDLParser.T__58)
-
+                pass
             elif token in [SystemRDLParser.T__59]:
                 self.enterOuterAlt(localctx, 40)
                 self.state = 329
                 self.match(SystemRDLParser.T__59)
-
+                pass
             elif token in [SystemRDLParser.T__60]:
                 self.enterOuterAlt(localctx, 41)
                 self.state = 330
                 self.match(SystemRDLParser.T__60)
-
+                pass
             elif token in [SystemRDLParser.T__61]:
                 self.enterOuterAlt(localctx, 42)
                 self.state = 331
                 self.match(SystemRDLParser.T__61)
-
+                pass
             elif token in [SystemRDLParser.T__62]:
                 self.enterOuterAlt(localctx, 43)
                 self.state = 332
                 self.match(SystemRDLParser.T__62)
-
+                pass
             elif token in [SystemRDLParser.T__63]:
                 self.enterOuterAlt(localctx, 44)
                 self.state = 333
                 self.match(SystemRDLParser.T__63)
-
+                pass
             elif token in [SystemRDLParser.T__64]:
                 self.enterOuterAlt(localctx, 45)
                 self.state = 334
                 self.match(SystemRDLParser.T__64)
-
+                pass
             elif token in [SystemRDLParser.T__65]:
                 self.enterOuterAlt(localctx, 46)
                 self.state = 335
                 self.match(SystemRDLParser.T__65)
-
+                pass
             elif token in [SystemRDLParser.T__66]:
                 self.enterOuterAlt(localctx, 47)
                 self.state = 336
                 self.match(SystemRDLParser.T__66)
-
+                pass
             elif token in [SystemRDLParser.T__67]:
                 self.enterOuterAlt(localctx, 48)
                 self.state = 337
                 self.match(SystemRDLParser.T__67)
-
+                pass
             elif token in [SystemRDLParser.T__68]:
                 self.enterOuterAlt(localctx, 49)
                 self.state = 338
                 self.match(SystemRDLParser.T__68)
-
+                pass
             elif token in [SystemRDLParser.T__69]:
                 self.enterOuterAlt(localctx, 50)
                 self.state = 339
                 self.match(SystemRDLParser.T__69)
-
+                pass
             elif token in [SystemRDLParser.T__70]:
                 self.enterOuterAlt(localctx, 51)
                 self.state = 340
                 self.match(SystemRDLParser.T__70)
-
+                pass
             elif token in [SystemRDLParser.T__71]:
                 self.enterOuterAlt(localctx, 52)
                 self.state = 341
                 self.match(SystemRDLParser.T__71)
-
+                pass
             elif token in [SystemRDLParser.T__72]:
                 self.enterOuterAlt(localctx, 53)
                 self.state = 342
                 self.match(SystemRDLParser.T__72)
-
+                pass
             elif token in [SystemRDLParser.T__73]:
                 self.enterOuterAlt(localctx, 54)
                 self.state = 343
                 self.match(SystemRDLParser.T__73)
-
+                pass
             elif token in [SystemRDLParser.T__17]:
                 self.enterOuterAlt(localctx, 55)
                 self.state = 344
                 self.match(SystemRDLParser.T__17)
-
+                pass
             elif token in [SystemRDLParser.T__74]:
                 self.enterOuterAlt(localctx, 56)
                 self.state = 345
                 self.match(SystemRDLParser.T__74)
-
+                pass
             elif token in [SystemRDLParser.T__75]:
                 self.enterOuterAlt(localctx, 57)
                 self.state = 346
                 self.match(SystemRDLParser.T__75)
-
+                pass
             elif token in [SystemRDLParser.T__76]:
                 self.enterOuterAlt(localctx, 58)
                 self.state = 347
                 self.match(SystemRDLParser.T__76)
-
+                pass
             elif token in [SystemRDLParser.T__77]:
                 self.enterOuterAlt(localctx, 59)
                 self.state = 348
                 self.match(SystemRDLParser.T__77)
-
+                pass
             elif token in [SystemRDLParser.T__78]:
                 self.enterOuterAlt(localctx, 60)
                 self.state = 349
                 self.match(SystemRDLParser.T__78)
-
+                pass
             elif token in [SystemRDLParser.T__79]:
                 self.enterOuterAlt(localctx, 61)
                 self.state = 350
                 self.match(SystemRDLParser.T__79)
-
+                pass
             elif token in [SystemRDLParser.T__80]:
                 self.enterOuterAlt(localctx, 62)
                 self.state = 351
                 self.match(SystemRDLParser.T__80)
-
+                pass
             elif token in [SystemRDLParser.T__81]:
                 self.enterOuterAlt(localctx, 63)
                 self.state = 352
                 self.match(SystemRDLParser.T__81)
-
+                pass
             elif token in [SystemRDLParser.T__82]:
                 self.enterOuterAlt(localctx, 64)
                 self.state = 353
                 self.match(SystemRDLParser.T__82)
-
+                pass
             elif token in [SystemRDLParser.T__83]:
                 self.enterOuterAlt(localctx, 65)
                 self.state = 354
                 self.match(SystemRDLParser.T__83)
-
+                pass
             elif token in [SystemRDLParser.T__84]:
                 self.enterOuterAlt(localctx, 66)
                 self.state = 355
                 self.match(SystemRDLParser.T__84)
-
+                pass
             elif token in [SystemRDLParser.T__85]:
                 self.enterOuterAlt(localctx, 67)
                 self.state = 356
                 self.match(SystemRDLParser.T__85)
-
+                pass
             elif token in [SystemRDLParser.T__86]:
                 self.enterOuterAlt(localctx, 68)
                 self.state = 357
                 self.match(SystemRDLParser.T__86)
-
+                pass
             elif token in [SystemRDLParser.T__87]:
                 self.enterOuterAlt(localctx, 69)
                 self.state = 358
                 self.match(SystemRDLParser.T__87)
-
+                pass
             elif token in [SystemRDLParser.T__88]:
                 self.enterOuterAlt(localctx, 70)
                 self.state = 359
                 self.match(SystemRDLParser.T__88)
-
+                pass
             elif token in [SystemRDLParser.T__89]:
                 self.enterOuterAlt(localctx, 71)
                 self.state = 360
                 self.match(SystemRDLParser.T__89)
-
+                pass
             elif token in [SystemRDLParser.T__90]:
                 self.enterOuterAlt(localctx, 72)
                 self.state = 361
                 self.match(SystemRDLParser.T__90)
-
+                pass
             elif token in [SystemRDLParser.T__91]:
                 self.enterOuterAlt(localctx, 73)
                 self.state = 362
                 self.match(SystemRDLParser.T__91)
-
+                pass
             elif token in [SystemRDLParser.T__92]:
                 self.enterOuterAlt(localctx, 74)
                 self.state = 363
                 self.match(SystemRDLParser.T__92)
-
+                pass
             elif token in [SystemRDLParser.T__93]:
                 self.enterOuterAlt(localctx, 75)
                 self.state = 364
                 self.match(SystemRDLParser.T__93)
-
+                pass
             elif token in [SystemRDLParser.ID, SystemRDLParser.INST_ID]:
                 self.enterOuterAlt(localctx, 76)
                 self.state = 365
                 self.s_id()
-
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -2706,77 +2734,78 @@ class SystemRDLParser ( Parser ):
         self.enterRule(localctx, 52, self.RULE_property_rvalue_constant)
         try:
             self.state = 382
+            self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [SystemRDLParser.T__3]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 368
                 self.match(SystemRDLParser.T__3)
-
+                pass
             elif token in [SystemRDLParser.T__4]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 369
                 self.match(SystemRDLParser.T__4)
-
+                pass
             elif token in [SystemRDLParser.T__94]:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 370
                 self.match(SystemRDLParser.T__94)
-
+                pass
             elif token in [SystemRDLParser.T__95]:
                 self.enterOuterAlt(localctx, 4)
                 self.state = 371
                 self.match(SystemRDLParser.T__95)
-
+                pass
             elif token in [SystemRDLParser.T__96]:
                 self.enterOuterAlt(localctx, 5)
                 self.state = 372
                 self.match(SystemRDLParser.T__96)
-
+                pass
             elif token in [SystemRDLParser.T__97]:
                 self.enterOuterAlt(localctx, 6)
                 self.state = 373
                 self.match(SystemRDLParser.T__97)
-
+                pass
             elif token in [SystemRDLParser.T__98]:
                 self.enterOuterAlt(localctx, 7)
                 self.state = 374
                 self.match(SystemRDLParser.T__98)
-
+                pass
             elif token in [SystemRDLParser.T__99]:
                 self.enterOuterAlt(localctx, 8)
                 self.state = 375
                 self.match(SystemRDLParser.T__99)
-
+                pass
             elif token in [SystemRDLParser.T__100]:
                 self.enterOuterAlt(localctx, 9)
                 self.state = 376
                 self.match(SystemRDLParser.T__100)
-
+                pass
             elif token in [SystemRDLParser.T__101]:
                 self.enterOuterAlt(localctx, 10)
                 self.state = 377
                 self.match(SystemRDLParser.T__101)
-
+                pass
             elif token in [SystemRDLParser.T__80]:
                 self.enterOuterAlt(localctx, 11)
                 self.state = 378
                 self.match(SystemRDLParser.T__80)
-
+                pass
             elif token in [SystemRDLParser.T__79]:
                 self.enterOuterAlt(localctx, 12)
                 self.state = 379
                 self.match(SystemRDLParser.T__79)
-
+                pass
             elif token in [SystemRDLParser.NUM]:
                 self.enterOuterAlt(localctx, 13)
                 self.state = 380
                 self.num()
-
+                pass
             elif token in [SystemRDLParser.STR]:
                 self.enterOuterAlt(localctx, 14)
                 self.state = 381
                 self.string()
-
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -2821,6 +2850,7 @@ class SystemRDLParser ( Parser ):
             if not(((((_la - 103)) & ~0x3f) == 0 and ((1 << (_la - 103)) & ((1 << (SystemRDLParser.T__102 - 103)) | (1 << (SystemRDLParser.T__103 - 103)) | (1 << (SystemRDLParser.T__104 - 103)) | (1 << (SystemRDLParser.T__105 - 103)) | (1 << (SystemRDLParser.T__106 - 103)))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
+                self._errHandler.reportMatch(self)
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
@@ -2868,6 +2898,7 @@ class SystemRDLParser ( Parser ):
             if not(_la==SystemRDLParser.ID or _la==SystemRDLParser.INST_ID):
                 self._errHandler.recoverInline(self)
             else:
+                self._errHandler.reportMatch(self)
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
@@ -3131,6 +3162,7 @@ class SystemRDLParser ( Parser ):
             self.state = 408
             self.num()
             self.state = 417
+            self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==SystemRDLParser.LBRACE:
                 self.state = 409
@@ -3201,6 +3233,7 @@ class SystemRDLParser ( Parser ):
             if not(_la==SystemRDLParser.T__20 or _la==SystemRDLParser.T__21):
                 self._errHandler.recoverInline(self)
             else:
+                self._errHandler.reportMatch(self)
                 self.consume()
             self.state = 422
             self.match(SystemRDLParser.EQ)

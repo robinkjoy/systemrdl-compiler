@@ -35,6 +35,7 @@ class Component:
         for prop in self.properties:
             setattr(self, prop, self.get_default(prop, defaults))
         self.line = line
+        self.inst_line = line
 
     def get_type(self):
         return self.__class__.__name__
@@ -208,7 +209,7 @@ class AddrMap(Component):
             }
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.instantiated = False
-        self.field_endian = None
+        self.bit_order = None
 
     def check_type(self, prop, value, line):
         if not super().check_type(prop, value, line):
@@ -221,10 +222,23 @@ class AddrMap(Component):
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         super().set_property(prop, value, line, user_def_props, is_dynamic)
         if prop in ('msb0', 'lsb0') and value:
-            if self.field_endian is not None and self.field_endian != prop:
+            if self.bit_order is not None and self.bit_order != prop:
                 error(line, 'Properties msb0, lsb0 should be exclusive in AddrMap {}',
                       self.def_id if self.inst_id is None else self.inst_id)
-            self.field_endian = prop
+            self.bit_order = prop
+
+    def get_regs_iter(self):
+        def comp_iter(comp):
+            if isinstance(comp, list):
+                for c in comp:
+                    yield from comp_iter(c)
+            elif comp.get_type() == 'RegFile':
+                for c in comp.comps:
+                    yield from comp_iter(c)
+            elif comp.get_type() == 'Register':
+                yield comp
+        for comp in self.comps:
+            yield from comp_iter(comp)
 
 
 class RegFile(Component):
@@ -242,7 +256,7 @@ class RegFile(Component):
             'align_addr': 'unsizedNumeric'
             }
         super().__init__(def_id, inst_id, parent, defaults, line)
-        self.field_endian = None
+        self.bit_order = None
 
     def check_type(self, prop, value, line):
         if not super().check_type(prop, value, line):
@@ -251,9 +265,6 @@ class RegFile(Component):
         if prop == 'alignment' and not is_power_2(value):
             error(line, 'Property \'alignment\' should be a power of two.')
         return True
-
-    def validate_fields(self):
-        return self.field_endian
 
 
 class Register(Component):
@@ -275,7 +286,8 @@ class Register(Component):
             'align_addr': 'unsizedNumeric'
             }
         super().__init__(def_id, inst_id, parent, defaults, line)
-        self.field_endian = None
+        self.bit_order = None
+        self.filled_bits = set()
 
     def check_type(self, prop, value, line):
         if not super().check_type(prop, value, line):
@@ -284,40 +296,6 @@ class Register(Component):
         if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8 ):
             error(line, 'Property \'{}\' should be a power of two and >= 8.', prop)
         return True
-
-    # Validate fields for the following:
-    # * No overlapping
-    # * No mixing msb0 lsb0
-    # return implicit msb0/lsb0
-    # returned value passed up to parent if anonymous, else saved in definition
-    def validate_fields(self):
-        if sum([f.fieldwidth for f in self.comps if f.get_type() == 'Field']) > self.regwidth:
-            error(self.line, 'total field widths exceed register width in {}',
-                  self.def_id if self.inst_id is None else self.inst_id)
-        error_fields = [f.inst_id for f in self.comps
-                        if f.position != (None, None)
-                        and (f.position[0]>self.regwidth-1 or f.position[1]>self.regwidth-1)]
-        if error_fields:
-            error(self.line, 'field position greater than register msb in {}',
-                  ' ,'.join(error_fields))
-        indexes = [f.position for f in self.comps
-                   if f.get_type() == 'Field' and f.position != (None, None)]
-        if not indexes:
-            return None
-        msb0 = all([i[0] <= i[1] for i in indexes])
-        lsb0 = all([i[0] >= i[1] for i in indexes])
-        if not msb0 and not lsb0:
-            error(self.line, 'mixed use of msb0/lsb0 ordering schemes found in {}',
-                  self.def_id if self.inst_id is None else self.inst_id)
-        if msb0:
-            l = lambda x, y: set(range(x[0], x[1]+1)) & set(range(y[0], y[1]+1))
-        else:
-            l = lambda x, y: set(range(x[1], x[0]+1)) & set(range(y[1], y[0]+1))
-        if len(indexes) > 1 and reduce(l, indexes):
-            error(self.line, 'field positions overlap in {}',
-                  self.def_id if self.inst_id is None else self.inst_id)
-        self.field_endian = 'msb0' if msb0 else 'lsb0'
-        return self.field_endian
 
 
 class Field(Component):
@@ -421,6 +399,10 @@ class Field(Component):
             if (isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth):
                 warn(self.line, 'reset value signal width does not match fieldwidth in Field {}',
                       self.inst_id)
+
+    def pprint(self, level=0):
+        super().pprint(level)
+        print('{}[{}:{}]'.format(' '*level*4, self.position[0], self.position[1]))
 
 
 class Signal(Component):

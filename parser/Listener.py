@@ -1,4 +1,5 @@
 import re
+from functools import reduce
 from parser.antlr.SystemRDLListener import SystemRDLListener
 from parser.antlr.SystemRDLParser import SystemRDLParser
 import Component
@@ -207,7 +208,7 @@ class Listener(SystemRDLListener):
 
     # Exit a parse tree produced by SystemRDLParser#root.
     def exitRoot(self, ctx):
-        # addrmaps defined but not instantiated
+        # addrmaps which are defined but not instantiated
         self.addrmaps = [x for x in self.definitions[0]
                          if isinstance(x, Component.AddrMap)
                          and not x.instantiated]
@@ -259,6 +260,7 @@ class Listener(SystemRDLListener):
             Component.Property(prop_id, prop_type, prop_usage, prop_default))
 
     # Enter a parse tree produced by SystemRDLParser#component_def.
+    # enter definitions and anonymous instatiations
     def enterComponent_def(self, ctx):
         comp_type = ctx.getChild(0).getText()
         # anonymous instatiation
@@ -275,10 +277,16 @@ class Listener(SystemRDLListener):
                                                    None, self.curr_comp,
                                                    self.defaults, ctx.start.line)
             self.add_definition(comp, ctx.start.line)
+        # set bit order
+        if (comp_type in ['addrmap', 'regfile', 'reg'] and 
+                self.curr_comp is not None and
+                self.curr_comp.bit_order is not None):
+            comp.bit_order = self.curr_comp.bit_order
         self.curr_comp = comp
         self.push_scope()
 
     # Exit a parse tree produced by SystemRDLParser#component_def.
+    # exit definitions and anonymous instatiations
     def exitComponent_def(self, ctx):
         if (ctx.getChild(1).getText() == '{'
                 and ctx.anonymous_component_inst_elems() is None):
@@ -296,25 +304,6 @@ class Listener(SystemRDLListener):
             if not any([x for x in itercomps0(comp.comps)
                         if x.get_type() in comp_child[comp_type]]):
                 error(ctx.start.line, 'no child components in {}', comp_type)
-        # field endian check
-        if comp_type in ('RegFile', 'Register'):
-            field_endian = comp.validate_fields()
-            par_field_endian = comp.parent.field_endian
-            if par_field_endian is None:
-                comp.parent.field_endian = field_endian
-            elif par_field_endian != field_endian:
-                if (comp.parent.get_type() == 'AddrMap' and
-                   (comp.parent.msb0 or comp.parent.lsb0)):
-                    msg = 'explicit {} does not match inferred order from components'.format(
-                          'msb0' if comp.parent.msb0 else 'lsb0')
-                else:
-                    msg = 'mixed lsb0/msb0'
-                error(ctx.start.line, msg+' in {} {}', comp.parent.get_type(),
-                      comp.parent.def_id if comp.parent.inst_id is None else comp.parent.inst_id)
-        # assign implicit order to addrmap
-        if comp_type == 'AddrMap':
-            comp.msb0 = comp.field_endian == 'msb0'
-            comp.lsb0 = comp.field_endian == 'lsb0'
         # exit scope
         self.curr_comp = comp.parent
         self.pop_scope()
@@ -326,8 +315,8 @@ class Listener(SystemRDLListener):
             error(ctx.start.line,
                   'both definition name and instantiation name specified.')
 
-    # Enter a parse tree produced by SystemRDLParser#component_inst_elem.
-    def enterComponent_inst_elem(self, ctx):
+    # Exit a parse tree produced by SystemRDLParser#component_inst_elem.
+    def exitComponent_inst_elem(self, ctx):
         anon = self.rule_names[ctx.parentCtx.getRuleIndex()] == 'anonymous_component_inst_elems'
         if anon:
             comp = self.curr_comp
@@ -341,21 +330,14 @@ class Listener(SystemRDLListener):
                       'component \'{}\' definition not found', comp_name)
             parent = self.curr_comp
         comp_type = comp.get_type()
-        # field endian check (anon and def handled in exit comp_def)
-        if comp_type in ('RegFile', 'Register') and not anon:
-            if parent.field_endian is None:
-                parent.field_endian = comp.field_endian
-            elif parent.field_endian != comp.field_endian:
-                if parent.get_type() == 'AddrMap' and (parent.msb0 or parent.lsb0):
-                    msg = 'explicit {} does not match inferred order from components'.format(
-                          'msb0' if parent.msb0 else 'lsb0')
-                else:
-                    msg = 'mixed lsb0/msb0'
-                error(ctx.start.line, msg+' in {} {}', comp.parent.get_type(),
-                      comp.parent.def_id if comp.parent.inst_id is None else comp.parent.inst_id)
+
+        comp.inst_line = ctx.start.line
         # instatiation
         if ctx.array() is None:
             inst = comp if anon else comp.customcopy()
+            # set fieldwidth to 1 when no width/msb-lsb specified
+            if comp_type == 'Field' and inst.fieldwidth is None:
+                inst.fieldwidth = 1
         else:
             indctx = ctx.getChild(1).getChild
             # array indices
@@ -363,14 +345,14 @@ class Listener(SystemRDLListener):
                 # (5.1.2.a.3.ii)
                 if comp_type != 'Field':    # Signal too??
                     error(ctx.start.line, 'array indices not allowed for {}', comp_type)
-                high = extract_num(indctx(1).getText(), indctx(1).start.line)
-                low = extract_num(indctx(3).getText(), indctx(3).start.line)
-                if not isinstance(high, int) or not isinstance(low, int):
+                left = extract_num(indctx(1).getText(), indctx(1).start.line)
+                right = extract_num(indctx(3).getText(), indctx(3).start.line)
+                if not isinstance(left, int) or not isinstance(right, int):
                     error(ctx.start.line, 'array indices should be unsizedNumeric')
                 inst = comp if anon else comp.customcopy()
-                inst.position = (high, low)
-                (high, low) = (high, low) if high>low else (low, high)
-                size = high - low + 1
+                inst.position = (left, right)
+                size = abs(left - right) + 1
+            # array declaration
             else:
                 size = extract_num(indctx(1).getText(), indctx(1).start.line)
                 if not isinstance(size, int):
@@ -385,6 +367,7 @@ class Listener(SystemRDLListener):
                          'Signal': 'signalwidth'}[comp_type]
                 inst.set_property(width, size, ctx.start.line, [], False)
         inst_id = ctx.getChild(0).getText()
+        # iterate through insts and set parent, name and line
         for i in itercomp(inst):
             i.inst_id = inst_id
             i.parent = parent
@@ -399,6 +382,41 @@ class Listener(SystemRDLListener):
             if value is not None:
                 for x in itercomp(inst):
                     x.set_property(prop, value, ctx.start.line, [], None)
+        # set field position
+        if comp_type == 'Field':
+            # if parent has no bit order, infer it
+            if parent.bit_order is None:
+                if inst.position == (None, None) or inst.position[0] == inst.position[1]:
+                    inst.bit_order = 'lsb0'
+                    print('NOTE:{}: bit order set to default \'lsb0\''.format(ctx.start.line))
+                else:
+                    inst.bit_order = 'msb0' if inst.position[0] < inst.position[1] else 'lsb0'
+                # propagate bit order up
+                parent.bit_order = inst.bit_order
+                temp = parent
+                while temp.parent is not None:
+                    temp.parent.bit_order = temp.bit_order
+                    temp = temp.parent
+            # set position if not explicitly specified
+            if inst.position == (None, None):
+                if len(parent.comps) == 0:
+                    last_index = -1 if parent.bit_order == 'lsb0' else parent.regwidth
+                else:
+                    last_index = parent.comps[-1].position[0]
+                if parent.bit_order == 'lsb0':
+                    inst.position = (last_index+inst.fieldwidth, last_index+1)
+                else:
+                    inst.position = (last_index-inst.fieldwidth, last_index-1)
+            else:
+                if ((inst.position[0] > inst.position[1] and parent.bit_order == 'msb0') or
+                        (inst.position[0] < inst.position[1] and parent.bit_order == 'lsb0')):
+                    error(ctx.start.line, 'field bit order do not match register bit order')
+            if max(inst.position) >= parent.regwidth or min(inst.position) < 0:
+                error(ctx.start.line, 'field position out of range of register width')
+            # check for overlapping fields
+            if parent.filled_bits & set(range(min(inst.position), max(inst.position)+1)):
+                error(ctx.start.line, 'field position overlaps with a previous field')
+            parent.filled_bits |= set(range(min(inst.position), max(inst.position)+1))
         # if in root, component is signal
         if parent is None:
             self.add_root_sig_inst(inst, ctx.start.line)

@@ -5,7 +5,8 @@ from parser.antlr.SystemRDLLexer import SystemRDLLexer
 from parser.antlr.SystemRDLParser import SystemRDLParser
 from parser.Listener import Listener
 from parser.CustomErrorListener import CustomErrorListener
-from parser.preproc import perl_preproc
+from parser.preproc import preproc
+from parser.preproc import defines
 
 
 def main(argv):
@@ -13,21 +14,20 @@ def main(argv):
     aparser = argparse.ArgumentParser(description='Convert SystemRDL files to outputs like RTL')
     aparser.add_argument('files', type=str, nargs='+', help='Input RDL files')
     aparser.add_argument('--perl-preproc', action='store_true',
-            dest='pp_enable', help='Input RDL files')
+            dest='perl_pp', help='Input RDL files')
     aparser.add_argument('--print', action='store_true',
             dest='v_print', help='Print register information')
 
     args = aparser.parse_args()
 
-    stream = ''
+    data = ''
+    line_details = []
     for fn in args.files:
-        if args.pp_enable:
-            (pp, ln) = perl_preproc(fn)
-        else:
-            pp = open(fn).read()
-        stream += pp
+        (data_pp, ln) = preproc(fn, args.perl_pp)
+        data += data_pp
+        line_details += ln
 
-    inputfile = antlr4.InputStream(stream)
+    inputfile = antlr4.InputStream(data)
 
     lexer = SystemRDLLexer(inputfile)
     lexer.removeErrorListeners()

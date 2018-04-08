@@ -1,18 +1,11 @@
+import logging
 import re
 from io import StringIO
 import tempfile
 import subprocess
 import os
-from Common import error
-from Common import warn
 
-def flatten(l, a):
-    for i in l:
-        if isinstance(i, list):
-            flatten(i, a)
-        else:
-            a.append(i)
-    return a
+log = logging.getLogger()
 
 def perl_preproc(data):
 
@@ -31,6 +24,8 @@ def perl_preproc(data):
     data = re.sub(r'^', r'"; print $fhl __LINE__, "\\n";  print $fh "', data, flags=re.MULTILINE)
     # enclose in perl print
     data = 'print $fh "' + data + '";';
+    # remove extra line added by above logic
+    data = data[:data.rfind('\n')]+'\n";'
 
     # perl file
     fpl = tempfile.NamedTemporaryFile(mode='w', delete=False)
@@ -62,112 +57,115 @@ def perl_preproc(data):
     return (data_pp, line_numbers)
 
 defines = {}
-def verilog_preproc_line(i, line, ifs, line_detail, perl_pp_enabled):
+def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
     # ifdef/ifndef
     p_ifdef = re.compile(r'^\s*`(ifdef|ifndef)(?:(?:\s+([a-zA-Z0-9_]+))?\s+(.*?))?\s*(?://.*)*$')
     match = p_ifdef.search(line)
     if match:
         if not match.group(2):
-            error(line_detail[1], 'Syntax error, expected macro')
+            log.error('Syntax error, expected macro', i)
         if match.group(3):
-            error(line_detail[1], 'Syntax error, unexpected chars found')
+            log.error('Syntax error, unexpected chars found', i)
         if ((match.group(1) == 'ifdef' and match.group(2) in defines) or
                 (match.group(1) == 'ifndef' and match.group(2) not in defines)):
             ifs.append((ifs[-1][0] if ifs else False, False))
         else:
             ifs.append((True, False))
-        return ('', ifs, line_detail)
+        return ('', ifs, line_info)
     # else
     p_else = re.compile(r'^\s*`else(\s+[^\s]+)*?\s*(?://.*)*$')
     match = p_else.search(line)
     if match:
         if ifs[-1][1]:
-            error(line_detail[1], 'Syntax error, unmatched else')
+            log.error('Syntax error, unmatched else', i)
         if match.group(1):
-            error(line_detail[1], 'Syntax error, unexpected chars found')
+            log.error('Syntax error, unexpected chars found', i)
         ifs[-1] =  ((not ifs[-1]) or (ifs[-2] if len(ifs) > 1 else False), True)
-        return ('', ifs, line_detail)
+        return ('', ifs, line_info)
     # endif
     p_endif = re.compile(r'^s*`endif(\s+[^\s]+)*?\s*(?://.*)*$')
     match = p_endif.search(line)
     if match:
         if match.group(1):
-            error(line_detail[1], 'Syntax error, unexpected chars found')
+            log.error('Syntax error, unexpected chars found', i)
         if not ifs:
-            error(line_detail[1], 'Syntax error, unmatched endif')
+            log.error('Syntax error, unmatched endif', i)
         del ifs[-1]
-        return ('', ifs, line_detail)
+        return ('', ifs, line_info)
     # skip if disabled by ifdef
     if ifs and ifs[-1][0]:
-        return ('', ifs, line_detail)
+        return ('', ifs, line_info)
     # define
     p_define = re.compile(r'^\s*`define(?:(?:\s+([a-zA-Z0-9_]+))?\s+(.*?))?\s*(?://.*)*$')
     match = p_define.search(line)
     if match:
         if not match.group(1):
-            error(line_detail[1], 'Syntax error, expected macro')
+            log.error('Syntax error, expected macro', i)
         defines[match.group(1)] = match.group(2) or ''
-        return ('', ifs, line_detail)
+        return ('', ifs, line_info)
     # undef
     p_undef = re.compile(r'^\s*`undef(?:(?:\s+([a-zA-Z0-9_]+))?\s+(.*?))?\s*(?://.*)*$')
     match = p_undef.search(line)
     if match:
         if not match.group(1):
-            error(line_detail[1], 'Syntax error, expected macro')
+            log.error('Syntax error, expected macro', i)
         if match.group(2):
-            error(line_detail[1], 'Syntax error, unexpected chars found')
+            log.error('Syntax error, unexpected chars found', i)
         if match.group(1) not in defines:
-            warn(line_detail[1], 'macro not defined')
+            log.warn('macro not defined', i)
         else:
             del defines[match.group(1)]
-        return ('', ifs, line_detail)
+        return ('', ifs, line_info)
     # include
     p_include = re.compile(r'^\s*`include(?:(?:\s+"(.+)")?\s+(.*?))?\s*(?://.*)*$')
     match = p_include.search(line)
     if match:
         if not match.group(1):
-            error(line_detail[1], 'Syntax error, expected filename')
+            log.error('Syntax error, expected filename', i)
         if match.group(2):
-            error(line_detail[1], 'Syntax error, unexpected chars found')
-        (data_pp, inc_line_details) = preproc(match.group(1), perl_pp_enabled, line_detail[1])
-        return (data_pp, ifs, inc_line_details)
+            log.error('Syntax error, unexpected chars found', i)
+        (data_pp, inc_line_infos) = preproc(match.group(1), perl_pp_enabled, line_info)
+        return (data_pp, ifs, inc_line_infos)
     # replace macro
     p_macro = re.compile(r'`([a-zA-Z0-9_]+)')
     matches = p_macro.findall(line)
     line_pp = line
     for match in matches:
         if match not in defines:
-            error(line_detail[1], 'Syntax error, unknown macro')
+            log.error('Syntax error, unknown macro', i)
         line_pp = re.sub('`'+match, defines[match], line_pp)
     if matches:
-        (line_pp, ifs, line_detail) = verilog_preproc_line(i, line_pp, ifs, line_detail, perl_pp_enabled)
-    return (line_pp, ifs, line_detail)
+        (line_pp, ifs, line_info) = verilog_preproc_line(i, line_pp, ifs, line_info, perl_pp_enabled)
+    return (line_pp, ifs, line_info)
 
-def verilog_preproc(data, line_details, perl_pp_enabled):
+def verilog_preproc(data, line_infos, perl_pp_enabled):
 
     lines = []
     ifs = []    # (inactive, else)
     for i, line in enumerate(StringIO(data)):
-        (line_pp, ifs, line_detail) = verilog_preproc_line(i, line, ifs, line_details[i], perl_pp_enabled)
-        line_details[i] = line_detail
+        (line_pp, ifs, line_info) = verilog_preproc_line(i, line, ifs, line_infos[i], perl_pp_enabled)
+        line_infos[i] = line_info
         lines.append(line_pp)
 
     if ifs:
-        error(line_details[i][1], 'Syntax error, unmatched ifdef/ifndef')
+        log.error('Syntax error, unmatched ifdef/ifndef', line_infos[i])
 
-    return ('\n'.join(lines), line_details)
+    return (''.join(lines), line_infos)
 
-def preproc(filename, perl_pp_enabled, line=''):
+def preproc(filename, perl_pp_enabled, line_info=None):
     try:
         data = open(filename).read()
     except IOError:
-        error(line, 'Failed to open/read file {}', filename)
+        log.error('Failed to open/read {}', filename)
     if perl_pp_enabled:
         (data_pp, line_numbers) = perl_preproc(data)
-        line_details = [(filename, i) for i in line_numbers]
+        line_infos = [(filename, i) for i in line_numbers]
     else:
         data_pp = data
-        line_details = [(filename, i) for i in range(1, data_pp.count('\n')+1)]
-    (data_pp, line_details) = verilog_preproc(data_pp, line_details, perl_pp_enabled)
+        line_infos = [(filename, i) for i in range(1, data_pp.count('\n')+1)]
+    prev_line_info = log.handlers[0].formatter.line_info
+    log.handlers[0].formatter.line_info = line_infos
+    (data_pp, line_infos) = verilog_preproc(data_pp, line_infos, perl_pp_enabled)
+    log.handlers[0].formatter.line_info = prev_line_info
 
-    return (data_pp, line_details)
+    return (data_pp, line_infos)

@@ -1,11 +1,12 @@
 import re
 from functools import reduce
+import logging
 from parser.antlr.SystemRDLListener import SystemRDLListener
 from parser.antlr.SystemRDLParser import SystemRDLParser
 import Component
-from Common import error
 from Common import itercomps0
 
+log = logging.getLogger()
 
 def extract_num(string, line):
     if string.isdigit():
@@ -14,7 +15,7 @@ def extract_num(string, line):
         return int(string, 16)
     string = re.split('\'([bodh])', string, 1, flags=re.IGNORECASE)
     if string[2][0] == '_':
-        error(line, 'first position of value should not be \'_\'.')
+        log.error('first position of value should not be \'_\'.', line)
     base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1].lower()]
     return (int(string[0]), int(string[2].translate({ord('_'): None}), base))
 
@@ -61,10 +62,10 @@ class Listener(SystemRDLListener):
         if self.curr_comp is not None:
             curr_type = self.curr_comp.get_type()
             if comp_type not in allowed_defs[curr_type]:
-                error(line, '{} definition not allowed in {}',
+                log.error('{} definition not allowed in {}', line,
                       comp_type, curr_type)
         if any([x for x in self.definitions[-1] if x.def_id == definition.def_id]):
-            error(line, 'all definition names should be unique within a scope')
+            log.error('all definition names should be unique within a scope', line)
         self.definitions[-1].append(definition)
 
     def push_scope(self):
@@ -87,12 +88,12 @@ class Listener(SystemRDLListener):
 
     def add_root_sig_inst(self, inst, line):
         if any([x for x in self.root_sig_insts if x.inst_id == inst.inst_id]):
-            error(line, 'all instance names should be unique within a scope')
+            log.error('all instance names should be unique within a scope', line)
         self.root_sig_insts.append(inst)
 
     def add_default(self, default, line):
         if default[0] in self.defaults[-1]:
-            error(line, 'defaults can be assigned only once per scope.')
+            log.error('defaults can be assigned only once per scope.', line)
         self.defaults[-1].update({default[0]: default[1]})
 
     def get_post_inst_prop_value(self, ctx, prop):
@@ -130,11 +131,11 @@ class Listener(SystemRDLListener):
             else:
                 return self.extract_instance_ref(ctx.getChild(0))
         elif ctx.concat() is not None:
-            error(ctx.start.line, 'concat not implemented.')
+            log.error('concat not implemented.', ctx.start.line)
 
     def extract_enum_body(self, ctx, enum):
         if len(ctx.enum_entry()) == 0:
-            error(ctx.start.line, 'no entries in enum.')
+            log.error('no entries in enum.', ctx.start.line)
         for entryctx in ctx.children:
             if not isinstance(entryctx, SystemRDLParser.Enum_entryContext):
                 continue
@@ -142,14 +143,13 @@ class Listener(SystemRDLListener):
             value = extract_num(entryctx.getChild(2).getText(),
                                 entryctx.getChild(2).start.line)
             if not isinstance(value, tuple):
-                error(entryctx.start.line,
-                      'enum entry value should be sizedNumeric')
+                log.error('enum entry value should be sizedNumeric', entryctx.start.line)
             if any([x for x in enum.comps if x.def_id == name]):
-                error(entryctx.start.line, '{} already defined in enum.', name)
+                log.error('{} already defined in enum.', entryctx.start.line, name)
             if len(enum.comps) != 0 and value[0] != enum.comps[0].value[0]:
-                error(entryctx.start.line, 'size does not match others.')
+                log.error('size does not match others.', entryctx.start.line)
             if any([x for x in enum.comps if x.value == value]):
-                error(entryctx.start.line, '{} already defined in enum.',
+                log.error('{} already defined in enum.', entryctx.start.line,
                       entryctx.getChild(2).getText())
             entry = Component.EnumEntry(name, value)
             for propctx in entryctx.children:
@@ -173,22 +173,22 @@ class Listener(SystemRDLListener):
                     else:
                         return comp.inst_id == inst_id
                 if isinstance(parent, list):
-                    error(line, 'array index for {} not specified.',
+                    log.error('array index for {} not specified.', line,
                           parent[0].inst_id)
                 inst_id = elemctx.getChild(0).getText()
                 inst = next((x for x in parent.comps
                              if match(x, inst_id)), None)
                 if inst is None:
-                    error(elemctx.start.line, '{} not found', inst_id)
+                    log.error('{} not found', elemctx.start.line, inst_id)
                 if elemctx.num() is not None:
                     if not isinstance(inst, list):
-                        error(line, '{} is not an array', inst.inst_id)
+                        log.error('{} is not an array', line, inst.inst_id)
                     index = extract_num(elemctx.getChild(2).getText(),
                                         elemctx.getChild(2).start.line)
                     if isinstance(index, tuple):
-                        error(line, 'array index should be numeric.')
+                        log.error('array index should be numeric.', line)
                     if index >= len(inst):
-                        error(elemctx.start.line, 'array index out of range')
+                        log.error('array index out of range', elemctx.start.line)
                     inst = inst[index]
             elif isinstance(elemctx, SystemRDLParser.S_propertyContext):
                 prop = elemctx.getChild(0).getText()
@@ -203,7 +203,7 @@ class Listener(SystemRDLListener):
     def check_property_already_set(self, inst, prop, line):
         # (5.1.3.1) ex in (5.1.4)
         if (id(inst), prop) in self.assigned_props[-1]:
-            error(line, 'property \'{}\' already assigned in scope', prop)
+            log.error('property \'{}\' already assigned in scope', line, prop)
         self.assigned_props[-1].append((id(inst), prop))
 
     # Exit a parse tree produced by SystemRDLParser#root.
@@ -212,28 +212,30 @@ class Listener(SystemRDLListener):
         self.addrmaps = [x for x in self.definitions[0]
                          if isinstance(x, Component.AddrMap)
                          and not x.instantiated]
+        if not self.addrmaps:
+            log.error('No addressmaps found')
 
     # Enter a parse tree produced by SystemRDLParser#property_body.
     def enterProperty_body(self, ctx):
         prop_id = ctx.parentCtx.getChild(
             0, SystemRDLParser.S_idContext).getText()
         if not ctx.property_type():
-            error(ctx.start.line, 'property type not specified')
+            log.error('property type not specified', ctx.start.line)
         if len(ctx.property_type()) > 1:
-            error(ctx.start.line, 'property type reassigned')
+            log.error('property type reassigned', ctx.start.line)
         prop_type = ctx.getChild(
             0, SystemRDLParser.Property_typeContext).getChild(2).getText()
         if not ctx.property_usage():
-            error(ctx.start.line, 'property usage not specified')
+            log.error('property usage not specified', ctx.start.line)
         if len(ctx.property_usage()) > 1:
-            error(ctx.start.line, 'property usage reassigned')
+            log.error('property usage reassigned', ctx.start.line)
         prop_usage = []
         prop_usage_ctx = ctx.getChild(0, SystemRDLParser.Property_usageContext)
         for childctx in prop_usage_ctx.getChildren():
             if isinstance(childctx, SystemRDLParser.Property_componentContext):
                 prop_usage.append(childctx.getText())
         if len(ctx.property_default()) > 1:
-            error(ctx.start.line, 'property default reassigned')
+            log.error('property default reassigned', ctx.start.line)
         if not ctx.property_default():
             prop_default = None
         else:
@@ -243,18 +245,18 @@ class Listener(SystemRDLListener):
             line = prop_default_ctx.start.line
             if prop_default_ctx.string() is not None:
                 if prop_type != 'string':
-                    error(line, 'default does not match type.')
+                    log.error('default does not match type.', line)
                 prop_default = prop_default_str
             elif prop_default_ctx.num() is not None:
                 if prop_type != 'number':
-                    error(line, 'default does not match type.')
+                    log.error('default does not match type.', line)
                 prop_default = extract_num(
                     prop_default_str, prop_default_ctx.start.line)
                 if not isinstance(prop_default, int):
-                    error(line, 'default value cannot be sizedNumeric.')
+                    log.error('default value cannot be sizedNumeric.', line)
             else:
                 if prop_type != 'boolean':
-                    error(line, 'default does not match type.')
+                    log.error('default does not match type.', line)
                 prop_default = True if prop_default_str == 'true' else False
         self.user_def_props.append(
             Component.Property(prop_id, prop_type, prop_usage, prop_default))
@@ -267,8 +269,7 @@ class Listener(SystemRDLListener):
         if ctx.getChild(1).getText() == '{':
             # (5.1.4)
             if self.curr_comp is None and comp_type != 'signal':
-                error(ctx.start.line,
-                      '{} should not be instantiated in root scope.', comp_type)
+                log.error('{} should not be instantiated in root scope.', ctx.start.line, comp_type)
             comp = self.COMPONENT_CLASS[comp_type](
                 None, None, self.curr_comp, self.defaults, ctx.start.line)
         # definition
@@ -290,8 +291,7 @@ class Listener(SystemRDLListener):
     def exitComponent_def(self, ctx):
         if (ctx.getChild(1).getText() == '{'
                 and ctx.anonymous_component_inst_elems() is None):
-            error(ctx.start.line,
-                  'definition name or instatiation name not specified.')
+            log.error('definition name or instatiation name not specified.', ctx.start.line)
         # at least one child component instantiated
         comp_child = {
             'Register': ['Field'],
@@ -303,7 +303,7 @@ class Listener(SystemRDLListener):
         if comp_type in comp_child:
             if not any([x for x in itercomps0(comp.comps)
                         if x.get_type() in comp_child[comp_type]]):
-                error(ctx.start.line, 'no child components in {}', comp_type)
+                log.error('no child components in {}', ctx.start.line, comp_type)
         # exit scope
         self.curr_comp = comp.parent
         self.pop_scope()
@@ -312,8 +312,7 @@ class Listener(SystemRDLListener):
     # SystemRDLParser#anonymous_component_inst_elems.
     def enterAnonymous_component_inst_elems(self, ctx):
         if self.curr_comp.def_id is not None:
-            error(ctx.start.line,
-                  'both definition name and instantiation name specified.')
+            log.error('both definition name and instantiation name specified.', ctx.start.line)
 
     # Exit a parse tree produced by SystemRDLParser#component_inst_elem.
     def exitComponent_inst_elem(self, ctx):
@@ -326,8 +325,7 @@ class Listener(SystemRDLListener):
                 0, SystemRDLParser.S_idContext).getText()
             comp = self.get_definition(Component.Component, comp_name)
             if comp is None:
-                error(ctx.parentCtx.start.line,
-                      'component \'{}\' definition not found', comp_name)
+                log.error('component \'{}\' definition not found', ctx.start.line, comp_name)
             parent = self.curr_comp
         comp_type = comp.get_type()
 
@@ -344,11 +342,11 @@ class Listener(SystemRDLListener):
             if ctx.getChild(1).getChild(2).getText() == ':':
                 # (5.1.2.a.3.ii)
                 if comp_type != 'Field':    # Signal too??
-                    error(ctx.start.line, 'array indices not allowed for {}', comp_type)
+                    log.error('array indices not allowed for {}', ctx.start.line, comp_type)
                 left = extract_num(indctx(1).getText(), indctx(1).start.line)
                 right = extract_num(indctx(3).getText(), indctx(3).start.line)
                 if not isinstance(left, int) or not isinstance(right, int):
-                    error(ctx.start.line, 'array indices should be unsizedNumeric')
+                    log.error('array indices should be unsizedNumeric', ctx.start.line)
                 inst = comp if anon else comp.customcopy()
                 inst.position = (left, right)
                 size = abs(left - right) + 1
@@ -356,7 +354,7 @@ class Listener(SystemRDLListener):
             else:
                 size = extract_num(indctx(1).getText(), indctx(1).start.line)
                 if not isinstance(size, int):
-                    error(ctx.start.line, 'array size should be unsizedNumeric')
+                    log.error('array size should be unsizedNumeric', ctx.start.line)
                 if comp_type in ('Field', 'Signal'):
                     inst = comp if anon else comp.customcopy()
                 else:
@@ -410,12 +408,12 @@ class Listener(SystemRDLListener):
             else:
                 if ((inst.position[0] > inst.position[1] and parent.bit_order == 'msb0') or
                         (inst.position[0] < inst.position[1] and parent.bit_order == 'lsb0')):
-                    error(ctx.start.line, 'field bit order do not match register bit order')
+                    log.error('field bit order do not match register bit order', ctx.start.line)
             if max(inst.position) >= parent.regwidth or min(inst.position) < 0:
-                error(ctx.start.line, 'field position out of range of register width')
+                log.error('field position out of range of register width', ctx.start.line)
             # check for overlapping fields
             if parent.filled_bits & set(range(min(inst.position), max(inst.position)+1)):
-                error(ctx.start.line, 'field position overlaps with a previous field')
+                log.error('field position overlaps with a previous field', ctx.start.line)
             parent.filled_bits |= set(range(min(inst.position), max(inst.position)+1))
         # if in root, component is signal
         if parent is None:
@@ -427,13 +425,13 @@ class Listener(SystemRDLListener):
     def enterExplicit_property_assign(self, ctx):
         if self.rule_names[ctx.parentCtx.getRuleIndex()] == 'default_property_assign':
             if ctx.property_modifier():
-                error(ctx.start.line, 'property modifier not allowed in default')
+                log.error('property modifier not allowed in default', ctx.start.line)
             prop = ctx.getChild(0).getText()
             if prop in ('name', 'desc'):
                 if (ctx.property_assign_rhs() is None
                         or ctx.getChild(2).property_rvalue_constant() is None
                         or ctx.getChild(2).getChild(0).string() is None):
-                    error(ctx.start.line, '{} expected string value.', prop)
+                    log.error('{} expected string value.', ctx.start.line, prop)
                 value = ctx.getChild(2).getText()
             else:
                 def prop_class(prop):
@@ -443,19 +441,19 @@ class Listener(SystemRDLListener):
                     return None
                 cls = prop_class(prop)
                 if cls is None:
-                    error(ctx.start.line, '{} is not a builtin property.', prop)
+                    log.error('{} is not a builtin property.', ctx.start.line, prop)
                 if ctx.property_assign_rhs() is None:
                     value = True
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
                 if not cls.check_type(prop, value, ctx.start.line):
-                    error(ctx.start.line, '{} expected {}.', prop, cls.properties[prop])
+                    log.error('{} expected {}.', ctx.start.line, prop, cls.properties[prop])
             self.add_default((prop, value), ctx.start.line)
         else:
             comp = self.curr_comp
             if ctx.property_modifier():
                 if ctx.getChild(1).getText() != 'intr' or comp.get_type() != 'Field':
-                    error(ctx.start.line, 'property modifier is allowed only for\'intr\' on Field')
+                    log.error('property modifier is allowed only for\'intr\' on Field', ctx.start.line)
                 self.check_property_already_set(comp, 'intr', ctx.start.line)
                 comp.set_property('intrmod', ctx.getChild(0).getText(),
                                   ctx.start.line, [], False)            # fix nonsticky
@@ -475,7 +473,7 @@ class Listener(SystemRDLListener):
     def enterPost_property_assign(self, ctx):
         inst_prop = self.extract_instance_ref(ctx.getChild(0))
         if not isinstance(inst_prop, tuple):
-            error(ctx.start.line, 'property is not specified.')
+            log.error('property is not specified.', ctx.start.line)
         (inst, prop) = inst_prop
         if ctx.property_assign_rhs() is None:
             value = self.get_implicit_value(

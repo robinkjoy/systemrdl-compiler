@@ -1,10 +1,4 @@
-def error(line, msg, *args):
-    exit('error:{}: '.format(line) + msg.format(*args))
-
-
-def warn(line, msg, *args):
-    print('warn:{}: '.format(line) + msg.format(*args))
-
+import logging
 
 def itercomps(comps):
     for comp in comps:
@@ -21,3 +15,11 @@ def itercomps0(comps):
             yield comp[0]
         else:
             yield comp
+
+def flatten(l, a=[]):
+    for i in l:
+        if isinstance(i, list):
+            flatten(i, a)
+        else:
+            a.append(i)
+    return a

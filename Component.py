@@ -1,7 +1,5 @@
 import copy
 from functools import reduce
-from Common import error
-from Common import warn
 from Common import itercomps
 from Common import itercomps0
 
@@ -45,7 +43,7 @@ class Component:
         setattr(self, prop, value)
         exc = [x for x in self.EXCLUSIVES if prop in x]
         if exc and sum(map(true_or_assigned, [getattr(self, x) for x in exc[0]])) > 1:
-            error(self.line, 'Properties {} should be exclusive in {} {}',
+            log.error('Properties {} should be exclusive in {} {}', self.line,
                   ', '.join(exc), self.get_type(),
                   self.def_id if self.inst_id is None else self.inst_id)
 
@@ -112,11 +110,11 @@ class Component:
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         if prop in self.properties:
             if is_dynamic and prop in self.NON_DYNAMIC_PROPERTIES:
-                error(line, 'Property \'{}\' cannot be assigned dynamically.', prop)
+                log.error('Property \'{}\' cannot be assigned dynamically.', line, prop)
             if not self.check_type(prop, value, line):
-                error(line, 'Property \'{}\' expected {}.', prop, self.properties[prop])
+                log.error('Property \'{}\' expected {}.', line, prop, self.properties[prop])
             if prop in ('signalwidth', 'fieldwidth') and getattr(self, prop) not in (None, value):
-                error(line, 'instantiation width does not match explicitly defined width.')
+                log.error('instantiation width does not match explicitly defined width.', line)
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -126,13 +124,13 @@ class Component:
                 }
             user_def_prop = next((x for x in user_def_props if x.prop_id == prop), None)
             if user_def_prop is None:
-                error(line, 'Property \'{}\' not defined for {}.', prop, self.get_type())
+                log.error('Property \'{}\' not defined for {}.', line, prop, self.get_type())
             else:
                 self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]
                 if value is None:
                     value = user_def_prop.prop_default
                 elif not self.check_type(prop, value, line):
-                    error(line, 'Property \'{}\' expected {}.', prop, self.properties[prop])
+                    log.error('Property \'{}\' expected {}.', line, prop, self.properties[prop])
         return value
 
     def customcopy(self):
@@ -160,10 +158,10 @@ class Component:
             comp_type = inst.get_type()
         parent_type = self.get_type()
         if comp_type not in allowed_insts[parent_type]:
-            error(line, '{} instance not allowed in {}', comp_type, parent_type)
+            log.error('{} instance not allowed in {}', line, comp_type, parent_type)
         inst_id = inst[0].inst_id if isinstance(inst, list) else inst.inst_id
         if any([x for x in itercomps0(self.comps) if x.inst_id == inst_id]):
-            error(line, 'all instance names should be unique within a scope')
+            log.error('all instance names should be unique within a scope', line)
         self.comps.append(inst)
 
     def pprint(self, level=0):
@@ -216,14 +214,14 @@ class AddrMap(Component):
             return False
         # semantics (10.3.1)
         if prop == 'alignment' and not is_power_2(value):
-            error(line, 'Property \'alignment\' should be a power of two.')
+            log.error('Property \'alignment\' should be a power of two.', line)
         return True
 
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         super().set_property(prop, value, line, user_def_props, is_dynamic)
         if prop in ('msb0', 'lsb0') and value:
             if self.bit_order is not None and self.bit_order != prop:
-                error(line, 'Properties msb0, lsb0 should be exclusive in AddrMap {}',
+                log.error('Properties msb0, lsb0 should be exclusive in AddrMap {}', line,
                       self.def_id if self.inst_id is None else self.inst_id)
             self.bit_order = prop
 
@@ -263,7 +261,7 @@ class RegFile(Component):
             return False
         # semantics (9.1.1)
         if prop == 'alignment' and not is_power_2(value):
-            error(line, 'Property \'alignment\' should be a power of two.')
+            log.error('Property \'alignment\' should be a power of two.', line)
         return True
 
 
@@ -294,7 +292,7 @@ class Register(Component):
             return False
         # semantics (8.5.1)
         if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8 ):
-            error(line, 'Property \'{}\' should be a power of two and >= 8.', prop)
+            log.error('Property \'{}\' should be a power of two and >= 8.', line, prop)
         return True
 
 
@@ -382,22 +380,22 @@ class Field(Component):
         if not super().check_type(prop, value, line):
             return False
         if prop == 'reset' and isinstance(value, int) and value != 0:
-            error(line, 'Verilog style integer should be used for non-zero reset values.')  # (7.5.1.a)
+            log.error('Verilog style integer should be used for non-zero reset values.', line)  # (7.5.1.a)
         return True
 
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         super().set_property(prop, value, line, user_def_props, is_dynamic)
         invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
         if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:     # (Table 9)
-            error(self.line, 'invalid field access pair in Field {}',
+            log.error('invalid field access pair in Field {}', self.line,
                   self.inst_id)
         # reset size
         if prop == 'reset' and self.fieldwidth is not None:
             if isinstance(self.reset, tuple) and self.reset[0] != self.fieldwidth:
-                warn(self.line, 'reset width does not match fieldwidth in Field {}',
+                log.warn('reset width does not match fieldwidth in Field {}', self.line,
                       self.inst_id)
             if (isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth):
-                warn(self.line, 'reset value signal width does not match fieldwidth in Field {}',
+                log.warn('reset value signal width does not match fieldwidth in Field {}', self.line,
                       self.inst_id)
 
     def pprint(self, level=0):

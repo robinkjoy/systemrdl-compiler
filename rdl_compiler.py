@@ -26,7 +26,7 @@ def main(argv):
     log_level_names = [logging.getLevelName(i) for i in log_level_nos]
     log_levels = dict(zip(log_level_names, log_level_nos))
     aparser.add_argument('--log-level', choices=log_level_names, default='INFO',
-            dest='log_level', help=argparse.SUPPRESS)
+            dest='log_level')
     args = aparser.parse_args()
 
     # setup logger

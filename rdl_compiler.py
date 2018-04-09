@@ -45,12 +45,6 @@ def main(argv):
 
     log.handlers[0].formatter.line_info = Common.flatten(line_infos)
 
-    for i in line_infos:
-        print(i)
-    line_infos = Common.flatten(line_infos)
-    for i, line in enumerate(StringIO(data)):
-        print('{}:{}({}):{}'.format(i, *line_infos[i], line), end='')
-
     # parsing
     inputfile = antlr4.InputStream(data)
 

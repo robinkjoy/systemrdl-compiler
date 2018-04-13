@@ -330,6 +330,7 @@ class Listener(SystemRDLListener):
         comp_type = comp.get_type()
 
         comp.inst_line = ctx.start.line
+        is_array = False
         # instatiation
         if ctx.array() is None:
             inst = comp if anon else comp.customcopy()
@@ -360,6 +361,7 @@ class Listener(SystemRDLListener):
                 else:
                     inst0 = [comp if anon else comp.customcopy()]
                     inst = inst0 + [comp.customcopy() for i in range(size-1)]
+                    is_array = True
             if comp_type in ('Field', 'Signal'):
                 width = {'Field': 'fieldwidth',
                          'Signal': 'signalwidth'}[comp_type]
@@ -374,10 +376,16 @@ class Listener(SystemRDLListener):
             i.line = ctx.start.line
             if comp_type == 'AddrMap':
                 i.instantiated = True
+        # set list_index for arrays
+        if isinstance(inst, list):
+            for i, instl in enumerate(inst):
+                instl.list_index = i
         # set properties set with instatiation
         for prop in ['reset', 'at_addr', 'inc_addr', 'align_addr']:
             value = self.get_post_inst_prop_value(ctx, prop)
             if value is not None:
+                if prop == 'inc_addr' and not is_array:
+                    log.error('+= address stride is applicable only for arrays', ctx.start.line)
                 for x in itercomp(inst):
                     x.set_property(prop, value, ctx.start.line, [], None)
         # set field position
@@ -386,7 +394,7 @@ class Listener(SystemRDLListener):
             if parent.bit_order is None:
                 if inst.position == (None, None) or inst.position[0] == inst.position[1]:
                     inst.bit_order = 'lsb0'
-                    print('NOTE:{}: bit order set to default \'lsb0\''.format(ctx.start.line))
+                    log.info('bit order set to default \'lsb0\'', ctx.start.line)
                 else:
                     inst.bit_order = 'msb0' if inst.position[0] < inst.position[1] else 'lsb0'
                 # propagate bit order up

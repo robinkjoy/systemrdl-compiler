@@ -1,6 +1,6 @@
 # systemrdl-compiler
 Tool to generate synthesizable RTL files from SystemRDL input
 
-To run example:
+To see help:
 
-$ python rdl_compiler.py examples/sample.rdl
+$ python rdl_compiler.py -h

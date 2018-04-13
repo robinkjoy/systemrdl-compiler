@@ -1,8 +1,11 @@
 import copy
 from functools import reduce
+import logging
+from math import ceil
 from Common import itercomps
 from Common import itercomps0
 
+log = logging.getLogger()
 
 def is_power_2(number):
     return number > 0 and (number & (number - 1)) == 0
@@ -34,6 +37,8 @@ class Component:
             setattr(self, prop, self.get_default(prop, defaults))
         self.line = line
         self.inst_line = line
+        self.addr = 0
+        self.list_index = None
 
     def get_type(self):
         return self.__class__.__name__
@@ -67,7 +72,7 @@ class Component:
             'sizedNumeric': None,
             'unsizedNumeric': None,
             'accessType': 'rw',
-            'addressingType': 'realign',
+            'addressingType': 'regalign',
             'precedenceType': 'sw',
             'reference': None,
             'reference2enum': None,
@@ -94,7 +99,7 @@ class Component:
                 return True
             elif prop_type == 'accessType' and value in ('rw', 'wr', 'r', 'w', 'na'):
                 return True
-            elif prop_type == 'addressingType' and value in ('compact', 'realign', 'fullalign'):
+            elif prop_type == 'addressingType' and value in ('compact', 'regalign', 'fullalign'):
                 return True
             elif prop_type == 'precedenceType' and value in ('sw', 'hw'):
                 return True
@@ -140,6 +145,8 @@ class Component:
         def copy_method(x):
             return [y.customcopy() for y in x] if isinstance(x, list) else x.customcopy()
         newcopy.comps = [copy_method(x) for x in self.comps]
+        for comp in itercomps(newcopy.comps):
+            comp.parent = newcopy
         newcopy.properties = copy.deepcopy(self.properties)
         return newcopy
 
@@ -183,13 +190,59 @@ class Component:
                 comp.pprint(level+1)
         print(' '*level*indent+'}')
 
+    def get_full_name(self):
+        list_index_str = '' if self.list_index is None else '_'+str(self.list_index)
+        if self.parent is None or self.parent.get_type() == 'AddrMap':
+            return self.inst_id or self.def_id
+        else:
+            return self.parent.get_full_name()+'_'+self.inst_id+list_index_str
+
+    def populate_addresses(self, start_addr, addr_mode, align=None, listi=0):
+        def align_addr_to(addr, align):
+            return ceil(addr/align)*align
+        self.addr = start_addr
+        if self.at_addr:
+            self.addr = self.at_addr
+        ialign = getattr(self, 'alignment', None) or align
+        if ialign:
+            self.addr = align_addr_to(self.addr, ialign//8)
+        iaddr_mode = getattr(self, 'addressing', None) or addr_mode
+        if self.get_type() == 'Register' and iaddr_mode in ['regalign', 'fullalign']:
+            self.addr = align_addr_to(self.addr, self.regwidth//8)
+        # alignment of an array instance specifies the alignment of the start of the array (only)
+        # but if inc_addr is specified it recalculates array start and applies inc_addr
+        if self.align_addr and (listi == 0 or self.inc_addr):
+            self.addr = ceil(self.addr/self.align_addr)*self.align_addr
+        if self.inc_addr:
+            self.addr += self.inc_addr*listi
+        curr_addr = self.addr
+        if self.get_type() in ['AddrMap', 'RegFile']:
+            for compl in self.comps:
+                if isinstance(compl, list):
+                    if compl[0].get_type() == 'Register' and iaddr_mode == 'fullalign':
+                        lsize = len(compl)*compl[0].regwidth
+                        lalign = 1<<(lsize-1).bit_length()  # round up to next power of 2
+                        curr_addr = align_addr_to(curr_addr, lalign//8)
+                    # if inc_addr, pass first element's addr for all array elements
+                    currl_addr = curr_addr
+                    for i, comp in enumerate(compl):
+                        if comp.inc_addr:
+                            curr_addr = comp.populate_addresses(currl_addr, iaddr_mode, ialign, i)
+                        else:
+                            curr_addr = comp.populate_addresses(curr_addr, iaddr_mode, ialign, i)
+                else:
+                    curr_addr = compl.populate_addresses(curr_addr, iaddr_mode, ialign)
+            return curr_addr
+        elif self.get_type() == 'Register':
+            return self.addr + self.regwidth//8
+
 
 class AddrMap(Component):
 
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus', 'addressing',
                               'rsvdset', 'rsvdsetX', 'msb0', 'lsb0',
                               'bridge', 'arbiter']
-    EXCLUSIVES = [['msb0', 'lsb0']]     # (10.3.1.g)
+    EXCLUSIVES = [['msb0', 'lsb0'], ['at_addr', 'align_addr']]     # (10.3.1.g)
 
     def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
@@ -203,7 +256,11 @@ class AddrMap(Component):
             'msb0': 'boolean',
             'lsb0': 'boolean',
             'bridge': 'boolean',
-            'arbiter': 'string'
+            'arbiter': 'string',
+            # Instance properties
+            'at_addr': 'unsizedNumeric',
+            'inc_addr': 'unsizedNumeric',
+            'align_addr': 'unsizedNumeric'
             }
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.instantiated = False
@@ -238,6 +295,19 @@ class AddrMap(Component):
         for comp in self.comps:
             yield from comp_iter(comp)
 
+    def pprint(self, level=0):
+        super().pprint(level)
+        print('{}@{:x}'.format(' '*level*4, self.addr))
+
+    def validate_addresses(self):
+        filled_addr = set()
+        for reg in self.get_regs_iter():
+            reg_addr = set(range(reg.addr, reg.addr+reg.regwidth//8))
+            if filled_addr & reg_addr:
+                log.error('Address 0x{:x} of register {} already assigned', reg.line, reg.addr, reg.inst_id)
+            filled_addr |= reg_addr
+        return max(filled_addr)
+
 
 class RegFile(Component):
 
@@ -263,6 +333,10 @@ class RegFile(Component):
         if prop == 'alignment' and not is_power_2(value):
             log.error('Property \'alignment\' should be a power of two.', line)
         return True
+
+    def pprint(self, level=0):
+        super().pprint(level)
+        print('{}@{:x}'.format(' '*level*4, self.addr))
 
 
 class Register(Component):
@@ -294,6 +368,10 @@ class Register(Component):
         if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8 ):
             log.error('Property \'{}\' should be a power of two and >= 8.', line, prop)
         return True
+
+    def pprint(self, level=0):
+        super().pprint(level)
+        print('{}@{:x}'.format(' '*level*4, self.addr))
 
 
 class Field(Component):

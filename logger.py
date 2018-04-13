@@ -31,11 +31,12 @@ class ErrorHandler(logging.Handler):
         sys.exit()
 
 def setup_logging(level, debug):
-    logging.getLogger().setLevel(level)
+    log = logging.getLogger()
+    log.setLevel(level)
     error_handler = ErrorHandler(level=logging.ERROR)
-    nonerror_handler = NonErrorHandler(level=logging.INFO)
+    nonerror_handler = NonErrorHandler(level=logging.DEBUG)
     fmt = CustomFormatter(debug)
     error_handler.setFormatter(fmt)
     nonerror_handler.setFormatter(fmt)
-    logging.getLogger().addHandler(error_handler)
-    logging.getLogger().addHandler(nonerror_handler)
+    log.addHandler(error_handler)
+    log.addHandler(nonerror_handler)

@@ -7,9 +7,9 @@ log = logging.getLogger()
 def import_strings(lang):
     global rtl_str
     if lang == 'verilog':
-        import targets.rtl.verilog_str as rtl_str
+        import targets.rtl.axilite_verilog_str as rtl_str
     else:
-        import targets.rtl.vhdl_str as rtl_str
+        import targets.rtl.axilite_vhdl_str as rtl_str
 
 
 def write_ports(f, regs):
@@ -151,7 +151,8 @@ def write_sts_sig_assgns(f, regs):
             #         ))
             # else:
             #     tmpl = rtl_str.sts_sig_assgns_no_clr_1bit if field.msb == field.lsb else rtl_str.sts_sig_assgns_no_clr
-            #     f.write(tmpl.format(reg_name=reg.get_full_name(), msb=field.position[0], lsb=field.position[1], signal=sig_name))
+            #     f.write(tmpl.format(reg_name=reg.get_full_name(), msb=field.position[0],
+            # lsb=field.position[1], signal=sig_name))
             tmpl = rtl_str.sts_sig_assgns_no_clr_1bit if field.position[0] == field.position[
                 1] else rtl_str.sts_sig_assgns_no_clr
             f.write(tmpl.format(reg_name=reg.get_full_name(), msb=field.position[0], lsb=field.position[1],

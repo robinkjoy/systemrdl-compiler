@@ -472,10 +472,10 @@ class Field(Component):
         if prop == 'reset' and self.fieldwidth is not None:
             if isinstance(self.reset, tuple) and self.reset[0] != self.fieldwidth:
                 log.warning('reset width does not match fieldwidth in Field {}', self.line,
-                         self.inst_id)
+                            self.inst_id)
             if isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth:
                 log.warning('reset value signal width does not match fieldwidth in Field {}', self.line,
-                         self.inst_id)
+                            self.inst_id)
 
     def pprint(self, level=0):
         super().pprint(level)

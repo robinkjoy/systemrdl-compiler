@@ -9,7 +9,7 @@ from parser.CustomErrorListener import CustomErrorListener
 from parser.preproc import preproc
 import logger
 import Common
-import targets.rtl.rtl_gen as rtl_gen
+import targets.rtl.rtl_axilite_gen as rtl_gen
 
 
 def main():

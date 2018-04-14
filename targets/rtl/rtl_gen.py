@@ -3,12 +3,14 @@ import logging
 
 log = logging.getLogger()
 
+
 def import_strings(lang):
     global rtl_str
     if lang == 'verilog':
         import targets.rtl.verilog_str as rtl_str
     else:
         import targets.rtl.vhdl_str as rtl_str
+
 
 def write_ports(f, regs):
     f.write(rtl_str.pl_port_comment)
@@ -22,15 +24,16 @@ def write_ports(f, regs):
             if field.position[0] == field.position[1]:
                 f.write(st.format(name=port_name))
             else:
-                f.write(sv.format(name=port_name, width=abs(field.position[0]-field.position[1])))
+                f.write(sv.format(name=port_name, width=abs(field.position[0] - field.position[1])))
             # if field.access == 'rwclr':
             #     f.write(st.format(name=port_name+'_vld'))
+
 
 def write_reg_signals(f, regs):
     for i, reg in enumerate(regs):
         f.write(rtl_str.reg_signal.format(name=reg.get_full_name(),
-            width=reg.regwidth-1,
-            pad=' ' if len(regs) > 9 and i <= 9 else ''))
+                                          width=reg.regwidth - 1))
+
 
 def write_reg_resets(f, regs):
     for i, reg in enumerate(regs):
@@ -40,45 +43,49 @@ def write_reg_resets(f, regs):
                     name=reg.get_full_name(),
                     msb=field.position[0], lsb=field.position[1]))
 
+
 def write_axi_keep_value(i, reg, indent):
-    slv = 'slv_reg'+str(i)
+    slv = 'slv_reg' + str(i)
     sclr = []
     s = ''
     for field in reg.comps:
         if field.singlepulse:
             sclr.append(field)
     if sclr:
-        s = '\n'+' '*indent+slv+' <= '
+        s = '\n' + ' ' * indent + slv + ' <= '
         sclr.sort(key=lambda x: x.position[0], reverse=True)
-        prev_lsb = reg.regwidth-1
+        prev_lsb = reg.regwidth - 1
         s += rtl_str.axi_sclr_part1
         for j, field in enumerate(sclr):
             if j != 0:
                 s += rtl_str.axi_sclr_part2
             msb, lsb = max(field.position), min(field.position)
             if prev_lsb != msb:
-                s += slv+rtl_str.axi_sclr_part3.format(prev_lsb, lsb+1)
+                s += slv + rtl_str.axi_sclr_part3.format(prev_lsb, lsb + 1)
                 s += rtl_str.axi_sclr_part2
-            prev_lsb = lsb-1
-            zeros = msb-lsb+1
-            s += rtl_str.axi_sclr_part4.format(size=zeros, val='0'*zeros)
+            prev_lsb = lsb - 1
+            zeros = msb - lsb + 1
+            s += rtl_str.axi_sclr_part4.format(size=zeros, val='0' * zeros)
         if prev_lsb != -1:
             s += rtl_str.axi_sclr_part2
-            s += slv+rtl_str.axi_sclr_part3.format(prev_lsb, 0)
+            s += slv + rtl_str.axi_sclr_part3.format(prev_lsb, 0)
         s += rtl_str.axi_sclr_part5
     return s
+
 
 def write_axi_writes(f, regs, mem_addr_bits, lang):
     indent = 14 if lang == 'vhdl' else 10
     for i, reg in enumerate(regs):
         # if reg.placcess == 'r':
         f.write(rtl_str.axi_write_assign.format(len=mem_addr_bits,
-            val=format(reg.addr//4, '0'+str(mem_addr_bits)+'b'), name=reg.get_full_name())) # fixme addr accesswidth
+                                                val=format(reg.addr // 4, '0' + str(mem_addr_bits) + 'b'),
+                                                name=reg.get_full_name()))  # fixme addr accesswidth
         s = write_axi_keep_value(i, reg, indent)
         if s != '':
             f.write(rtl_str.axi_write_assign_else)
             f.write(s)
         f.write(rtl_str.axi_write_assign_end)
+
 
 def write_axi_keep_values(f, regs, lang):
     s = ''
@@ -89,16 +96,20 @@ def write_axi_keep_values(f, regs, lang):
         f.write(rtl_str.axi_write_else)
         f.write(s)
 
+
 def reg_data_out_sensitivity(regs):
     s = ''
     for i in range(len(regs)):
-        s += 'slv_reg'+str(i)+', '
+        s += 'slv_reg' + str(i) + ', '
     return s
+
 
 def write_reg_data_out_when(f, regs, mem_addr_bits):
     for i, reg in enumerate(regs):
         f.write(rtl_str.reg_data_out_when.format(size=mem_addr_bits,
-            num_bin=format(reg.addr//4, '0'+str(mem_addr_bits)+'b'), name=reg.get_full_name())) # fixme addr accesswidth
+                                                 num_bin=format(reg.addr // 4, '0' + str(mem_addr_bits) + 'b'),
+                                                 name=reg.get_full_name()))  # fixme addr accesswidth
+
 
 def write_ctrl_sig_assgns(f, regs):
     for i, reg in enumerate(regs):
@@ -111,18 +122,23 @@ def write_ctrl_sig_assgns(f, regs):
                 f.write(rtl_str.ctrl_sig_assgns.format(
                     sig_name, reg.get_full_name(), field.position[0], field.position[1]))
 
+
 def write_sts_sig_resets(f, regs):
     for i, reg in enumerate(regs):
         f.write(rtl_str.sts_sig_assgns_reset.format(reg.get_full_name()))
 
-def write_sts_sig_assgns(f, regs, mem_addr_bits):
+
+def write_sts_sig_assgns(f, regs):
     for i, reg in enumerate(regs):
         for field in reg.comps:
             if 'w' in field.hw:
                 continue
-            sig_name = reg.name.lower()+'_'+field.name.lower()
+            sig_name = reg.name.lower() + '_' + field.name.lower()
             # if field.access == 'rwclr':
-            #     tmpl = rtl_str.sts_sig_assgns_with_clr_1bit if field.msb == field.lsb else rtl_str.sts_sig_assgns_with_clr
+            #     if field.msb == field.lsb:
+            #        tmpl = rtl_str.sts_sig_assgns_with_clr_1bit
+            #     else:
+            #        tmpl = rtl_str.sts_sig_assgns_with_clr
             #     f.write(tmpl.format(
             #         signal_valid=sig_name+'_vld',
             #         reg_name=reg.get_full_name(), msb=field.msb, lsb=field.lsb,
@@ -136,8 +152,11 @@ def write_sts_sig_assgns(f, regs, mem_addr_bits):
             # else:
             #     tmpl = rtl_str.sts_sig_assgns_no_clr_1bit if field.msb == field.lsb else rtl_str.sts_sig_assgns_no_clr
             #     f.write(tmpl.format(reg_name=reg.get_full_name(), msb=field.position[0], lsb=field.position[1], signal=sig_name))
-            tmpl = rtl_str.sts_sig_assgns_no_clr_1bit if field.position[0] == field.position[1] else rtl_str.sts_sig_assgns_no_clr
-            f.write(tmpl.format(reg_name=reg.get_full_name(), msb=field.position[0], lsb=field.position[1], signal=sig_name))
+            tmpl = rtl_str.sts_sig_assgns_no_clr_1bit if field.position[0] == field.position[
+                1] else rtl_str.sts_sig_assgns_no_clr
+            f.write(tmpl.format(reg_name=reg.get_full_name(), msb=field.position[0], lsb=field.position[1],
+                                signal=sig_name))
+
 
 # main function
 def generate_rtl(lang, addrmap, last_addr):
@@ -150,8 +169,8 @@ def generate_rtl(lang, addrmap, last_addr):
     f.write(rtl_str.entity_header.format(32, 8))
     write_ports(f, regs)
     f.write(rtl_str.axi_ports_end)
-    mem_addr_bits = ceil(log2(last_addr))-2 # axi width = 32, access = 32 fixme
-    f.write(rtl_str.constants.format(mem_addr_bits-1))
+    mem_addr_bits = ceil(log2(last_addr)) - 2  # axi width = 32, access = 32 fixme
+    f.write(rtl_str.constants.format(mem_addr_bits - 1))
     f.write(rtl_str.internal_signals)
     write_reg_signals(f, regs)
     f.write('\n')
@@ -171,7 +190,7 @@ def generate_rtl(lang, addrmap, last_addr):
     f.write(rtl_str.sts_sig_assgns_header)
     write_sts_sig_resets(f, regs)
     f.write(rtl_str.sts_sig_assgns_reset_else)
-    write_sts_sig_assgns(f, regs, mem_addr_bits)
+    write_sts_sig_assgns(f, regs)
     f.write(rtl_str.sts_sig_assgns_footer)
     f.write(rtl_str.arc_footer)
     f.close()

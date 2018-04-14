@@ -9,27 +9,26 @@ from parser.CustomErrorListener import CustomErrorListener
 from parser.preproc import preproc
 import logger
 import Common
-from io import StringIO
 import targets.rtl.rtl_gen as rtl_gen
 
-def main(argv):
 
+def main():
     # parse arguments
     aparser = argparse.ArgumentParser(description='Convert SystemRDL files to outputs like RTL')
     aparser.add_argument('files', type=str, nargs='+', help='Input RDL files')
     aparser.add_argument('--perl-preproc', action='store_true',
-            dest='perl_pp', help='Enable perl preprocessing')
+                         dest='perl_pp', help='Enable perl preprocessing')
     aparser.add_argument('--print', action='store_true',
-            dest='v_print', help='Print register information')
+                         dest='v_print', help='Print register information')
     aparser.add_argument('--lang', choices=['verilog', 'vhdl'], default='vhdl',
-            dest='lang', help='Select target language')
+                         dest='lang', help='Select target language')
     log_level_nos = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
     log_level_names = [logging.getLevelName(i) for i in log_level_nos]
     log_levels = dict(zip(log_level_names, log_level_nos))
     aparser.add_argument('--log-level', choices=log_level_names, default='INFO',
-            dest='log_level', help='Select log level')
+                         dest='log_level', help='Select log level')
     aparser.add_argument('--debug', action='store_true',
-            dest='debug', help=argparse.SUPPRESS)
+                         dest='debug', help=argparse.SUPPRESS)
     args = aparser.parse_args()
 
     # setup logger
@@ -46,7 +45,7 @@ def main(argv):
         line_infos += ln
     log.info('Preprocessing done.')
 
-    log.handlers[0].formatter.line_info = Common.flatten(line_infos)
+    log.handlers[0].formatter.line_info = Common.flatten(line_infos, [])
 
     # parsing
     log.info('Start parsing..')
@@ -68,14 +67,15 @@ def main(argv):
     for am in listener.addrmaps:
         am.populate_addresses(0, 'regalign')
         last_addr = am.validate_addresses()
-        log.info('{} assigned address space till 0x{:x}', 0, am.def_id, last_addr)
+        log.info(f'{am.def_id} assigned address space till 0x{last_addr:x}')
         if args.v_print:
             am.pprint()
-        log.info('Generating RTL for AddrMap {}..', 0, am.def_id)
+        log.info(f'Generating RTL for AddrMap {am.def_id}..')
         rtl_gen.generate_rtl(args.lang, am, last_addr)
 
     log.info('Done.')
     logging.shutdown()
 
+
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

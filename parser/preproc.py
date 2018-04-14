@@ -7,8 +7,8 @@ import os
 
 log = logging.getLogger()
 
-def perl_preproc(data):
 
+def perl_preproc(data):
     # escape escaped quotes, quotes and @
     data = re.sub(r'\\"', r'\\\\\\"', data)
     data = re.sub(r'([^\\])"', r'\1\\"', data)
@@ -23,9 +23,9 @@ def perl_preproc(data):
     # print line number to temp file
     data = re.sub(r'^', r'"; print $fhl __LINE__, "\\n";  print $fh "', data, flags=re.MULTILINE)
     # enclose in perl print
-    data = 'print $fh "' + data + '";';
+    data = 'print $fh "' + data + '";'
     # remove extra line added by above logic
-    data = data[:data.rfind('\n')]+'\n";'
+    data = data[:data.rfind('\n')] + '\n";'
 
     # perl file
     fpl = tempfile.NamedTemporaryFile(mode='w', delete=False)
@@ -39,10 +39,10 @@ def perl_preproc(data):
     fln.close()
 
     process = subprocess.Popen(['perl', 'parser/preproc.pl', fpl.name, fpp.name, fln.name],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     out = out.decode('utf-8')
-    
+
     os.remove(fpl.name)
     data_pp = open(fpp.name).read()
     os.remove(fpp.name)
@@ -54,9 +54,12 @@ def perl_preproc(data):
         # multi line perl snippet not allowed (close <% on same line)
         print(out)
         exit()
-    return (data_pp, line_numbers)
+    return data_pp, line_numbers
+
 
 defines = {}
+
+
 def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
     # ifdef/ifndef
     p_ifdef = re.compile(r'^\s*`(ifdef|ifndef)(?:(?:\s+([a-zA-Z0-9_]+))?\s+(.*?))?\s*(?://.*)*$')
@@ -71,7 +74,7 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
             ifs.append((ifs[-1][0] if ifs else False, False))
         else:
             ifs.append((True, False))
-        return ('', ifs, line_info)
+        return '', ifs, line_info
     # else
     p_else = re.compile(r'^\s*`else(\s+[^\s]+)*?\s*(?://.*)*$')
     match = p_else.search(line)
@@ -80,8 +83,8 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
             log.error('Syntax error, unmatched else', i)
         if match.group(1):
             log.error('Syntax error, unexpected chars found', i)
-        ifs[-1] =  ((not ifs[-1]) or (ifs[-2] if len(ifs) > 1 else False), True)
-        return ('', ifs, line_info)
+        ifs[-1] = ((not ifs[-1]) or (ifs[-2] if len(ifs) > 1 else False), True)
+        return '', ifs, line_info
     # endif
     p_endif = re.compile(r'^s*`endif(\s+[^\s]+)*?\s*(?://.*)*$')
     match = p_endif.search(line)
@@ -91,10 +94,10 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
         if not ifs:
             log.error('Syntax error, unmatched endif', i)
         del ifs[-1]
-        return ('', ifs, line_info)
+        return '', ifs, line_info
     # skip if disabled by ifdef
     if ifs and ifs[-1][0]:
-        return ('', ifs, line_info)
+        return '', ifs, line_info
     # define
     p_define = re.compile(r'^\s*`define(?:(?:\s+([a-zA-Z0-9_]+))?\s+(.*?))?\s*(?://.*)*$')
     match = p_define.search(line)
@@ -102,7 +105,7 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
         if not match.group(1):
             log.error('Syntax error, expected macro', i)
         defines[match.group(1)] = match.group(2) or ''
-        return ('', ifs, line_info)
+        return '', ifs, line_info
     # undef
     p_undef = re.compile(r'^\s*`undef(?:(?:\s+([a-zA-Z0-9_]+))?\s+(.*?))?\s*(?://.*)*$')
     match = p_undef.search(line)
@@ -112,10 +115,10 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
         if match.group(2):
             log.error('Syntax error, unexpected chars found', i)
         if match.group(1) not in defines:
-            log.warn('macro not defined', i)
+            log.warning('macro not defined', i)
         else:
             del defines[match.group(1)]
-        return ('', ifs, line_info)
+        return '', ifs, line_info
     # include
     p_include = re.compile(r'^\s*`include(?:(?:\s+"(.+)")?\s+(.*?))?\s*(?://.*)*$')
     match = p_include.search(line)
@@ -125,7 +128,7 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
         if match.group(2):
             log.error('Syntax error, unexpected chars found', i)
         (data_pp, inc_line_infos) = preproc(match.group(1), perl_pp_enabled, line_info)
-        return (data_pp, ifs, inc_line_infos)
+        return data_pp, ifs, inc_line_infos
     # replace macro
     p_macro = re.compile(r'`([a-zA-Z0-9_]+)')
     matches = p_macro.findall(line)
@@ -133,26 +136,27 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
     for match in matches:
         if match not in defines:
             log.error('Syntax error, unknown macro', i)
-        line_pp = re.sub('`'+match, defines[match], line_pp)
+        line_pp = re.sub('`' + match, defines[match], line_pp)
     if matches:
         (line_pp, ifs, line_info) = verilog_preproc_line(i, line_pp, ifs, line_info, perl_pp_enabled)
-    return (line_pp, ifs, line_info)
+    return line_pp, ifs, line_info
+
 
 def verilog_preproc(data, line_infos, perl_pp_enabled):
-
     lines = []
-    ifs = []    # (inactive, else)
+    ifs = []  # (inactive, else)
     for i, line in enumerate(StringIO(data)):
         (line_pp, ifs, line_info) = verilog_preproc_line(i, line, ifs, line_infos[i], perl_pp_enabled)
         line_infos[i] = line_info
         lines.append(line_pp)
 
     if ifs:
-        log.error('Syntax error, unmatched ifdef/ifndef', line_infos[i])
+        log.error('Syntax error, unmatched ifdef/ifndef', line_infos[-1])
 
-    return (''.join(lines), line_infos)
+    return ''.join(lines), line_infos
 
-def preproc(filename, perl_pp_enabled, line_info=None):
+
+def preproc(filename, perl_pp_enabled):
     try:
         data = open(filename).read()
     except IOError:
@@ -162,10 +166,10 @@ def preproc(filename, perl_pp_enabled, line_info=None):
         line_infos = [(filename, i) for i in line_numbers]
     else:
         data_pp = data
-        line_infos = [(filename, i) for i in range(1, data_pp.count('\n')+1)]
+        line_infos = [(filename, i) for i in range(1, data_pp.count('\n') + 1)]
     prev_line_info = log.handlers[0].formatter.line_info
     log.handlers[0].formatter.line_info = line_infos
     (data_pp, line_infos) = verilog_preproc(data_pp, line_infos, perl_pp_enabled)
     log.handlers[0].formatter.line_info = prev_line_info
 
-    return (data_pp, line_infos)
+    return data_pp, line_infos

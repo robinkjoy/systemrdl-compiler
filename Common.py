@@ -1,5 +1,3 @@
-import logging
-
 def itercomps(comps):
     for comp in comps:
         if isinstance(comp, list):
@@ -16,7 +14,8 @@ def itercomps0(comps):
         else:
             yield comp
 
-def flatten(l, a=[]):
+
+def flatten(l, a):
     for i in l:
         if isinstance(i, list):
             flatten(i, a)

@@ -1,11 +1,12 @@
 import copy
-from functools import reduce
 import logging
 from math import ceil
+
 from Common import itercomps
 from Common import itercomps0
 
 log = logging.getLogger()
+
 
 def is_power_2(number):
     return number > 0 and (number & (number - 1)) == 0
@@ -19,11 +20,10 @@ def true_or_assigned(val):
 
 
 class Component:
-
     UNIVERSAL_PROPERTIES = {
         'name': 'string',
         'desc': 'string'
-        }
+    }
     NON_DYNAMIC_PROPERTIES = []
     EXCLUSIVES = [[]]
 
@@ -49,8 +49,8 @@ class Component:
         exc = [x for x in self.EXCLUSIVES if prop in x]
         if exc and sum(map(true_or_assigned, [getattr(self, x) for x in exc[0]])) > 1:
             log.error('Properties {} should be exclusive in {} {}', self.line,
-                  ', '.join(exc), self.get_type(),
-                  self.def_id if self.inst_id is None else self.inst_id)
+                      ', '.join(exc), self.get_type(),
+                      self.def_id if self.inst_id is None else self.inst_id)
 
     def get_default(self, prop, defaults):
         def get_default_value(prop, defaults):
@@ -58,6 +58,7 @@ class Component:
                 if prop in defs:
                     return defs[prop]
             return None
+
         value = get_default_value(prop, defaults)
         if value is not None:
             return value
@@ -77,7 +78,7 @@ class Component:
             'reference': None,
             'reference2enum': None,
             'intrmodType': None
-            }
+        }
         prop_type = self.properties[prop]
         if isinstance(prop_type, list):
             prop_type = prop_type[0]
@@ -91,7 +92,7 @@ class Component:
             if prop_type == 'boolean' and isinstance(value, bool):
                 return True
             elif (prop_type == 'string' and isinstance(value, str)
-                    and len(value) > 1 and value[0] == '"' and value[-1] == '"'):
+                  and len(value) > 1 and value[0] == '"' and value[-1] == '"'):
                 return True
             elif prop_type in ('numeric', 'unsizedNumeric') and isinstance(value, int):
                 return True
@@ -115,9 +116,9 @@ class Component:
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         if prop in self.properties:
             if is_dynamic and prop in self.NON_DYNAMIC_PROPERTIES:
-                log.error('Property \'{}\' cannot be assigned dynamically.', line, prop)
+                log.error(f'Property \'{prop}\' cannot be assigned dynamically.', line)
             if not self.check_type(prop, value, line):
-                log.error('Property \'{}\' expected {}.', line, prop, self.properties[prop])
+                log.error(f'Property \'{prop}\' expected {self.properties[prop]}.', line)
             if prop in ('signalwidth', 'fieldwidth') and getattr(self, prop) not in (None, value):
                 log.error('instantiation width does not match explicitly defined width.', line)
         else:
@@ -126,24 +127,26 @@ class Component:
                 'string': 'string',
                 'boolean': 'boolean',
                 'ref': 'reference'
-                }
+            }
             user_def_prop = next((x for x in user_def_props if x.prop_id == prop), None)
             if user_def_prop is None:
-                log.error('Property \'{}\' not defined for {}.', line, prop, self.get_type())
+                log.error(f'Property \'{prop}\' not defined for {self.get_type()}.', line)
             else:
                 self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]
                 if value is None:
                     value = user_def_prop.prop_default
                 elif not self.check_type(prop, value, line):
-                    log.error('Property \'{}\' expected {}.', line, prop, self.properties[prop])
+                    log.error(f'Property \'{prop}\' expected {self.properties[prop]}.', line)
         return value
 
     def customcopy(self):
         if isinstance(self, Signal) or isinstance(self, Enum):
             return self
         newcopy = copy.copy(self)
+
         def copy_method(x):
             return [y.customcopy() for y in x] if isinstance(x, list) else x.customcopy()
+
         newcopy.comps = [copy_method(x) for x in self.comps]
         for comp in itercomps(newcopy.comps):
             comp.parent = newcopy
@@ -158,71 +161,72 @@ class Component:
             'Register': ['Field', 'Signal'],
             'RegFile': ['RegFile', 'Register', 'Signal'],
             'AddrMap': ['AddrMap', 'RegFile', 'Register', 'Signal'],  # Signal?
-            }
+        }
         if type(inst) == list:
             comp_type = inst[0].get_type()
         else:
             comp_type = inst.get_type()
         parent_type = self.get_type()
         if comp_type not in allowed_insts[parent_type]:
-            log.error('{} instance not allowed in {}', line, comp_type, parent_type)
+            log.error(f'{comp_type} instance not allowed in {parent_type}', line)
         inst_id = inst[0].inst_id if isinstance(inst, list) else inst.inst_id
         if any([x for x in itercomps0(self.comps) if x.inst_id == inst_id]):
-            log.error('all instance names should be unique within a scope', line)
+            log.error(f'all instance names should be unique within a scope', line)
         self.comps.append(inst)
 
     def pprint(self, level=0):
         indent = 4
-        print(' '*level*indent+'{} {} {} {{'.format(self.get_type(), self.def_id, self.inst_id))
+        print(' ' * level * indent + '{} {} {} {{'.format(self.get_type(), self.def_id, self.inst_id))
         max_len = len(max(self.properties, key=len))
         for prop in self.properties:
             value = getattr(self, prop)
             if not true_or_assigned(value):
                 continue
-            print('{}{}{:{}} = {}'.format(' '*level*indent, ' '*indent, prop, max_len, value))
+            print(f"{' ' * level * indent}{' ' * indent}{prop:{max_len}} = {value}")
         for comp in self.comps:
             if isinstance(comp, list):
-                print(' '*(level+1)*indent+'[')
+                print(' ' * (level + 1) * indent + '[')
                 for c in comp:
-                    c.pprint(level+2)
-                print(' '*(level+1)*indent+']')
+                    c.pprint(level + 2)
+                print(' ' * (level + 1) * indent + ']')
             else:
-                comp.pprint(level+1)
-        print(' '*level*indent+'}')
+                comp.pprint(level + 1)
+        print(' ' * level * indent + '}')
 
     def get_full_name(self):
-        list_index_str = '' if self.list_index is None else '_'+str(self.list_index)
+        list_index_str = '' if self.list_index is None else '_' + str(self.list_index)
         if self.parent is None or self.parent.get_type() == 'AddrMap':
             return self.inst_id or self.def_id
         else:
-            return self.parent.get_full_name()+'_'+self.inst_id+list_index_str
+            return self.parent.get_full_name() + '_' + self.inst_id + list_index_str
 
     def populate_addresses(self, start_addr, addr_mode, align=None, listi=0):
         def align_addr_to(addr, align):
-            return ceil(addr/align)*align
+            return ceil(addr / align) * align
+
         self.addr = start_addr
         if self.at_addr:
             self.addr = self.at_addr
         ialign = getattr(self, 'alignment', None) or align
         if ialign:
-            self.addr = align_addr_to(self.addr, ialign//8)
+            self.addr = align_addr_to(self.addr, ialign // 8)
         iaddr_mode = getattr(self, 'addressing', None) or addr_mode
         if self.get_type() == 'Register' and iaddr_mode in ['regalign', 'fullalign']:
-            self.addr = align_addr_to(self.addr, self.regwidth//8)
+            self.addr = align_addr_to(self.addr, self.regwidth // 8)
         # alignment of an array instance specifies the alignment of the start of the array (only)
         # but if inc_addr is specified it recalculates array start and applies inc_addr
         if self.align_addr and (listi == 0 or self.inc_addr):
-            self.addr = ceil(self.addr/self.align_addr)*self.align_addr
+            self.addr = ceil(self.addr / self.align_addr) * self.align_addr
         if self.inc_addr:
-            self.addr += self.inc_addr*listi
+            self.addr += self.inc_addr * listi
         curr_addr = self.addr
         if self.get_type() in ['AddrMap', 'RegFile']:
             for compl in self.comps:
                 if isinstance(compl, list):
                     if compl[0].get_type() == 'Register' and iaddr_mode == 'fullalign':
-                        lsize = len(compl)*compl[0].regwidth
-                        lalign = 1<<(lsize-1).bit_length()  # round up to next power of 2
-                        curr_addr = align_addr_to(curr_addr, lalign//8)
+                        lsize = len(compl) * compl[0].regwidth
+                        lalign = 1 << (lsize - 1).bit_length()  # round up to next power of 2
+                        curr_addr = align_addr_to(curr_addr, lalign // 8)
                     # if inc_addr, pass first element's addr for all array elements
                     currl_addr = curr_addr
                     for i, comp in enumerate(compl):
@@ -234,15 +238,14 @@ class Component:
                     curr_addr = compl.populate_addresses(curr_addr, iaddr_mode, ialign)
             return curr_addr
         elif self.get_type() == 'Register':
-            return self.addr + self.regwidth//8
+            return self.addr + self.regwidth // 8
 
 
 class AddrMap(Component):
-
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus', 'addressing',
                               'rsvdset', 'rsvdsetX', 'msb0', 'lsb0',
                               'bridge', 'arbiter']
-    EXCLUSIVES = [['msb0', 'lsb0'], ['at_addr', 'align_addr']]     # (10.3.1.g)
+    EXCLUSIVES = [['msb0', 'lsb0'], ['at_addr', 'align_addr']]  # (10.3.1.g)
 
     def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
@@ -261,7 +264,7 @@ class AddrMap(Component):
             'at_addr': 'unsizedNumeric',
             'inc_addr': 'unsizedNumeric',
             'align_addr': 'unsizedNumeric'
-            }
+        }
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.instantiated = False
         self.bit_order = None
@@ -279,7 +282,7 @@ class AddrMap(Component):
         if prop in ('msb0', 'lsb0') and value:
             if self.bit_order is not None and self.bit_order != prop:
                 log.error('Properties msb0, lsb0 should be exclusive in AddrMap {}', line,
-                      self.def_id if self.inst_id is None else self.inst_id)
+                          self.def_id if self.inst_id is None else self.inst_id)
             self.bit_order = prop
 
     def get_regs_iter(self):
@@ -292,27 +295,27 @@ class AddrMap(Component):
                     yield from comp_iter(c)
             elif comp.get_type() == 'Register':
                 yield comp
+
         for comp in self.comps:
             yield from comp_iter(comp)
 
     def pprint(self, level=0):
         super().pprint(level)
-        print('{}@{:x}'.format(' '*level*4, self.addr))
+        print(f"{' ' * level * 4}@{self.addr:x}")
 
     def validate_addresses(self):
         filled_addr = set()
         for reg in self.get_regs_iter():
-            reg_addr = set(range(reg.addr, reg.addr+reg.regwidth//8))
+            reg_addr = set(range(reg.addr, reg.addr + reg.regwidth // 8))
             if filled_addr & reg_addr:
-                log.error('Address 0x{:x} of register {} already assigned', reg.line, reg.addr, reg.inst_id)
+                log.error(f'Address 0x{reg.addr:x} of register {reg.inst_id} already assigned', reg.line)
             filled_addr |= reg_addr
         return max(filled_addr)
 
 
 class RegFile(Component):
-
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus']
-    EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
+    EXCLUSIVES = [['at_addr', 'align_addr']]  # (9.1.1.h)
 
     def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
@@ -322,7 +325,7 @@ class RegFile(Component):
             'at_addr': 'unsizedNumeric',
             'inc_addr': 'unsizedNumeric',
             'align_addr': 'unsizedNumeric'
-            }
+        }
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.bit_order = None
 
@@ -336,13 +339,12 @@ class RegFile(Component):
 
     def pprint(self, level=0):
         super().pprint(level)
-        print('{}@{:x}'.format(' '*level*4, self.addr))
+        print(f"{' ' * level * 4}@{self.addr:x}")
 
 
 class Register(Component):
-
     NON_DYNAMIC_PROPERTIES = ['regwidth', 'shared']
-    EXCLUSIVES = [['at_addr', 'align_addr']]    # (9.1.1.h)
+    EXCLUSIVES = [['at_addr', 'align_addr']]  # (9.1.1.h)
 
     def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
@@ -356,7 +358,7 @@ class Register(Component):
             'at_addr': 'unsizedNumeric',
             'inc_addr': 'unsizedNumeric',
             'align_addr': 'unsizedNumeric'
-            }
+        }
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.bit_order = None
         self.filled_bits = set()
@@ -365,30 +367,29 @@ class Register(Component):
         if not super().check_type(prop, value, line):
             return False
         # semantics (8.5.1)
-        if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8 ):
+        if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8):
             log.error('Property \'{}\' should be a power of two and >= 8.', line, prop)
         return True
 
     def pprint(self, level=0):
         super().pprint(level)
-        print('{}@{:x}'.format(' '*level*4, self.addr))
+        print(f"{' ' * level * 4}@{self.addr:x}")
 
 
 class Field(Component):
-
     NON_DYNAMIC_PROPERTIES = ['hw', 'fieldwidth']
     EXCLUSIVES = [
         ['rclr', 'rset'],
         ['woset', 'woclr'],
         ['swwe', 'swwel'],
-        ['we', 'wel'],                          # (7.7.1.c)
-        ['hwenable', 'hwmask'],                 # (7.7.1.d)
-        ['incrwidth', 'incrvalue'],             # (7.8.2.1.a)
-        ['decrwidth', 'decrvalue'],             # (7.8.2.1.b)
-        ['enable', 'mask'],                     # (7.9.1.a)
-        ['haltenable', 'haltmask'],             # (7.9.1.b)
-        ['nonsticky', 'sticky', 'stickybit'],   # (7.9.1.c)
-        ]
+        ['we', 'wel'],  # (7.7.1.c)
+        ['hwenable', 'hwmask'],  # (7.7.1.d)
+        ['incrwidth', 'incrvalue'],  # (7.8.2.1.a)
+        ['decrwidth', 'decrvalue'],  # (7.8.2.1.b)
+        ['enable', 'mask'],  # (7.9.1.a)
+        ['haltenable', 'haltmask'],  # (7.9.1.b)
+        ['nonsticky', 'sticky', 'stickybit'],  # (7.9.1.c)
+    ]
 
     def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
@@ -450,7 +451,7 @@ class Field(Component):
             # Miscellaneous properties
             'encode': 'reference2enum',
             'precedence': 'precedenceType'
-            }
+        }
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.position = (None, None)
 
@@ -464,25 +465,24 @@ class Field(Component):
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         super().set_property(prop, value, line, user_def_props, is_dynamic)
         invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
-        if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:     # (Table 9)
+        if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:  # (Table 9)
             log.error('invalid field access pair in Field {}', self.line,
-                  self.inst_id)
+                      self.inst_id)
         # reset size
         if prop == 'reset' and self.fieldwidth is not None:
             if isinstance(self.reset, tuple) and self.reset[0] != self.fieldwidth:
-                log.warn('reset width does not match fieldwidth in Field {}', self.line,
-                      self.inst_id)
-            if (isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth):
-                log.warn('reset value signal width does not match fieldwidth in Field {}', self.line,
-                      self.inst_id)
+                log.warning('reset width does not match fieldwidth in Field {}', self.line,
+                         self.inst_id)
+            if isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth:
+                log.warning('reset value signal width does not match fieldwidth in Field {}', self.line,
+                         self.inst_id)
 
     def pprint(self, level=0):
         super().pprint(level)
-        print('{}[{}:{}]'.format(' '*level*4, self.position[0], self.position[1]))
+        print(f"{' ' * level * 4}[{self.position[0]}:{self.position[1]}]")
 
 
 class Signal(Component):
-
     NON_DYNAMIC_PROPERTIES = ['signalwidth']
     EXCLUSIVES = [['sync', 'async'], ['activehigh', 'activelow']]
 
@@ -495,7 +495,7 @@ class Signal(Component):
             'field_reset': 'boolean',
             'activelow': 'boolean',
             'activehigh': 'boolean'
-            }
+        }
         super().__init__(def_id, inst_id, parent, defaults, line)
 
 
@@ -520,7 +520,7 @@ class EnumEntry(Component):
         super().set_property(prop, value, line, [], False)
 
 
-class Property():
+class Property:
 
     def __init__(self, prop_id, prop_type, prop_usage, prop_default):
         self.prop_id = prop_id

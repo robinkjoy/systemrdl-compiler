@@ -18,15 +18,19 @@ def write_ports(f, regs):
         for field in reg.comps:
             if field.hw == 'na':
                 continue
-            st = rtl_str.st_in if 'w' in field.hw else rtl_str.st_out
-            sv = rtl_str.sv_in if 'w' in field.hw else rtl_str.sv_out
             port_name = field.get_full_name()
             if field.position[0] == field.position[1]:
-                f.write(st.format(name=port_name))
+                if 'w' in field.hw:
+                    f.write(rtl_str.st_in.format(name=port_name+'_i'))
+                if 'r' in field.hw:
+                    f.write(rtl_str.st_out.format(name=port_name+'_o'))
             else:
-                f.write(sv.format(name=port_name, width=abs(field.position[0] - field.position[1])))
-            # if field.access == 'rwclr':
-            #     f.write(st.format(name=port_name+'_vld'))
+                if 'w' in field.hw:
+                    f.write(rtl_str.sv_in.format(name=port_name+'_i',
+                                                 width=abs(field.position[0] - field.position[1])))
+                if 'r' in field.hw:
+                    f.write(rtl_str.sv_out.format(name=port_name+'_o',
+                                                 width=abs(field.position[0] - field.position[1])))
 
 
 def write_reg_signals(f, regs):

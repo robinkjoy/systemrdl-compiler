@@ -33,7 +33,7 @@ addrmap am1 {
         name = "df2";
         fieldwidth = 2;
       } df2[2];
-    } data[2] @0x0 +=0x2;
+    } data[2] @0x0 +=0x4;
   };
   rf rf1;
   rf rf2;

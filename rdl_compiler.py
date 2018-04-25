@@ -23,10 +23,10 @@ def main():
     aparser.add_argument('--lang', choices=['verilog', 'vhdl'], default='vhdl',
                          dest='lang', help='Select target language')
     log_level_nos = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
-    log_level_names = [logging.getLevelName(i) for i in log_level_nos]
+    log_level_names = [logging.getLevelName(i).lower() for i in log_level_nos]
     log_levels = dict(zip(log_level_names, log_level_nos))
     aparser.add_argument('--log-level', choices=log_level_names, default='INFO',
-                         dest='log_level', help='Select log level')
+                         dest='log_level', type=str.lower, help='Select log level')
     aparser.add_argument('--debug', action='store_true',
                          dest='debug', help=argparse.SUPPRESS)
     args = aparser.parse_args()

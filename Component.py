@@ -234,6 +234,8 @@ class Component:
                             curr_addr = comp.populate_addresses(currl_addr, iaddr_mode, ialign, i)
                         else:
                             curr_addr = comp.populate_addresses(curr_addr, iaddr_mode, ialign, i)
+                elif compl.get_type() == 'Signal':
+                    continue
                 else:
                     curr_addr = compl.populate_addresses(curr_addr, iaddr_mode, ialign)
             return curr_addr

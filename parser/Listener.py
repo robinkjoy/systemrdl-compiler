@@ -44,7 +44,7 @@ class Listener(SystemRDLListener):
         self.addrmaps = []
         self.definitions = [[]]
         self.user_def_props = []
-        self.root_sig_insts = []
+        self.signals = []
         self.defaults = [{}]
         self.assigned_props = [[]]
 
@@ -79,16 +79,16 @@ class Listener(SystemRDLListener):
 
     def get_definition(self, def_type, def_id):
         for defs in reversed(self.definitions):
-            definition = [x for x in defs
-                          if isinstance(x, def_type) and x.def_id == def_id]
+            definition = next((x for x in defs
+                          if isinstance(x, def_type) and x.def_id == def_id), None)
             if definition:
-                return definition[0]
+                return definition
         return None
 
     def add_root_sig_inst(self, inst, line):
-        if any([x for x in self.root_sig_insts if x.inst_id == inst.inst_id]):
+        if any([x for x in self.signals if x.inst_id == inst.inst_id]):
             log.error('all instance names should be unique within a scope', line)
-        self.root_sig_insts.append(inst)
+        self.signals.append(inst)
 
     def add_default(self, default, line):
         if default[0] in self.defaults[-1]:
@@ -202,7 +202,7 @@ class Listener(SystemRDLListener):
     def check_property_already_set(self, inst, prop, line):
         # (5.1.3.1) ex in (5.1.4)
         if (id(inst), prop) in self.assigned_props[-1]:
-            log.error('property \'{prop}\' already assigned in scope', line)
+            log.error(f'property \'{prop}\' already assigned in scope', line)
         self.assigned_props[-1].append((id(inst), prop))
 
     # Exit a parse tree produced by SystemRDLParser#root.

@@ -174,7 +174,7 @@ def generate_rtl(lang, addrmap, last_addr):
     f.write(rtl_str.entity_header.format(32, 8))
     write_ports(f, regs)
     f.write(rtl_str.axi_ports_end)
-    mem_addr_bits = ceil(log2(last_addr)) - 2  # axi width = 32, access = 32 fixme
+    mem_addr_bits = ceil(log2(max(last_addr, 31))) - 2  # axi width = 32, access = 32 fixme
     f.write(rtl_str.constants.format(mem_addr_bits - 1))
     f.write(rtl_str.internal_signals)
     write_reg_signals(f, regs)

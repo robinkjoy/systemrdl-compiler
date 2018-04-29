@@ -488,7 +488,9 @@ class Signal(Component):
     NON_DYNAMIC_PROPERTIES = ['signalwidth']
     EXCLUSIVES = [['sync', 'async'], ['activehigh', 'activelow']]
 
-    def __init__(self, def_id, inst_id, parent, defaults, line):
+    def __init__(self, def_id, inst_id, parent, defaults, line, int_ref=None):
+        self.int_ref = int_ref
+        self.used = False
         self.properties = {
             'signalwidth': 'numeric',
             'sync': 'boolean',

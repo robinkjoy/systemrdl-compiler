@@ -29,6 +29,13 @@ def itercomp(comp):
         yield comp
 
 
+def is_matching_instance(comp, inst_id):
+    if isinstance(comp, list):
+        return comp[0].inst_id == inst_id
+    else:
+        return comp.inst_id == inst_id
+
+
 class Listener(SystemRDLListener):
     COMPONENT_CLASS = {
         'addrmap': Component.AddrMap,
@@ -45,8 +52,10 @@ class Listener(SystemRDLListener):
         self.definitions = [[]]
         self.user_def_props = []
         self.signals = []
+        self.scoped_insts = [[]]
         self.defaults = [{}]
         self.assigned_props = [[]]
+        self.internal_signals = []
 
     def add_definition(self, definition, line):
         allowed_defs = {
@@ -71,11 +80,13 @@ class Listener(SystemRDLListener):
         self.definitions.append([])
         self.defaults.append({})
         self.assigned_props.append([])
+        self.scoped_insts.append([])
 
     def pop_scope(self):
         self.definitions.pop()
         self.defaults.pop()
         self.assigned_props.pop()
+        self.scoped_insts.pop()
 
     def get_definition(self, def_type, def_id):
         for defs in reversed(self.definitions):
@@ -128,7 +139,13 @@ class Listener(SystemRDLListener):
                 # encode value is enum definition. not instances
                 return self.get_definition(Component.Enum, ctx.getText())
             else:
-                return self.extract_instance_ref(ctx.getChild(0))
+                inst, prop = self.extract_instance_ref_rhs(ctx.getChild(0))
+                if inst.get_type() == 'Signal':
+                    inst.used = True
+                if prop is not None:
+                    inst = Component.Signal(None, inst.inst_id+'_'+prop, None, [], (inst, prop))
+                    self.internal_signals.append(inst)
+                return inst
         elif ctx.concat() is not None:
             log.error('concat not implemented.', ctx.start.line)
 
@@ -161,22 +178,17 @@ class Listener(SystemRDLListener):
     def extract_instance_ref(self, ctx):
         prop = None
         inst = None
-        for i, elemctx in enumerate(ctx.children):
-            parent = self.curr_comp if i == 0 else inst
+        parent = self.curr_comp
+        for elemctx in ctx.children:
             if isinstance(elemctx, SystemRDLParser.Instance_ref_elemContext):
                 line = elemctx.start.line
-
-                def match(comp, inst_id):
-                    if isinstance(comp, list):
-                        return comp[0].inst_id == inst_id
-                    else:
-                        return comp.inst_id == inst_id
-
+                # if array index not specified, applies to all. But array index should be
+                # specified to access a child component
                 if isinstance(parent, list):
                     log.error(f'array index for {parent[0].inst_id} not specified.', line)
                 inst_id = elemctx.getChild(0).getText()
                 inst = next((x for x in parent.comps
-                             if match(x, inst_id)), None)
+                             if is_matching_instance(x, inst_id)), None)
                 if inst is None:
                     log.error(f'{inst_id} not found', elemctx.start.line)
                 if elemctx.num() is not None:
@@ -191,7 +203,46 @@ class Listener(SystemRDLListener):
                     inst = inst[index]
             elif isinstance(elemctx, SystemRDLParser.S_propertyContext):
                 prop = elemctx.getChild(0).getText()
-        return (inst, prop) if prop is not None else inst
+            parent = inst
+        return inst, prop
+
+    def extract_instance_ref_rhs(self, ctx):
+        prop = None
+        inst = None
+        parent = None
+        line = ctx.start.line
+        for elemctx in ctx.children:
+            if parent is None:
+                inst_id = elemctx.getChild(0).getText()
+                for insts in reversed(self.scoped_insts):
+                    inst = next((x for x in insts
+                                       if is_matching_instance(x, inst_id)), None)
+                    if inst:
+                        break
+                if inst is None:
+                    log.error(f'{inst_id} not found', line)
+            elif isinstance(elemctx, SystemRDLParser.Instance_ref_elemContext):
+                inst_id = elemctx.getChild(0).getText()
+                inst = next((x for x in parent.comps
+                             if is_matching_instance(x, inst_id)), None)
+                if inst is None:
+                    log.error(f'{inst_id} not found', line)
+                if elemctx.num() is not None:
+                    if not isinstance(inst, list):
+                        log.error('{inst.inst_id} is not an array', line)
+                    index = extract_num(elemctx.getChild(2).getText(),
+                                        elemctx.getChild(2).start.line)
+                    if isinstance(index, tuple):
+                        log.error('array index should be numeric.', line)
+                    if index >= len(inst):
+                        log.error('array index out of range', line)
+                    inst = inst[index]
+            elif isinstance(elemctx, SystemRDLParser.S_propertyContext):
+                prop = elemctx.getChild(0).getText()
+            if isinstance(inst, list):
+                log.error(f'array index for {inst[0].inst_id} not specified.', line)
+            parent = inst
+        return inst, prop
 
     def get_implicit_value(self, prop, ctx):
         if ctx.s_id() is None:  # not user defined property
@@ -403,6 +454,9 @@ class Listener(SystemRDLListener):
                     temp.parent.bit_order = temp.bit_order
                     temp = temp.parent
             # set position if not explicitly specified
+            log.debug(str(ctx.start.line))
+            log.debug(str(inst))
+            log.debug(str(parent))
             if inst.position == (None, None):
                 if len(parent.comps) == 0:
                     last_index = -1 if parent.bit_order == 'lsb0' else parent.regwidth
@@ -427,6 +481,12 @@ class Listener(SystemRDLListener):
             self.add_root_sig_inst(inst, ctx.start.line)
         else:
             parent.add_comp(inst, ctx.start.line)
+        # add to scoped insts for rhs reference
+        log.debug(str(self.scoped_insts))
+        if anon:
+            self.scoped_insts[-2].append(inst)
+        else:
+            self.scoped_insts[-1].append(inst)
 
     # Enter a parse tree produced by SystemRDLParser#explicit_property_assign.
     def enterExplicit_property_assign(self, ctx):
@@ -438,7 +498,7 @@ class Listener(SystemRDLListener):
                 if (ctx.property_assign_rhs() is None
                         or ctx.getChild(2).property_rvalue_constant() is None
                         or ctx.getChild(2).getChild(0).string() is None):
-                    log.error('{prop} expected string value.', ctx.start.line)
+                    log.error(f'{prop} expected string value.', ctx.start.line)
                 value = ctx.getChild(2).getText()
             else:
                 def prop_class(prop):
@@ -449,13 +509,13 @@ class Listener(SystemRDLListener):
 
                 cls = prop_class(prop)
                 if cls is None:
-                    log.error('{prop} is not a builtin property.', ctx.start.line)
+                    log.error(f'{prop} is not a builtin property.', ctx.start.line)
                 if ctx.property_assign_rhs() is None:
                     value = True
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
                 if not cls.check_type(prop, value, ctx.start.line):
-                    log.error('{prop} expected {cls.properties[prop]}.', ctx.start.line)
+                    log.error(f'{prop} expected {cls.properties[prop]}.', ctx.start.line)
             self.add_default((prop, value), ctx.start.line)
         else:
             comp = self.curr_comp
@@ -479,10 +539,9 @@ class Listener(SystemRDLListener):
 
     # Enter a parse tree produced by SystemRDLParser#post_property_assign.
     def enterPost_property_assign(self, ctx):
-        inst_prop = self.extract_instance_ref(ctx.getChild(0))
-        if not isinstance(inst_prop, tuple):
+        inst, prop = self.extract_instance_ref(ctx.getChild(0))
+        if prop is None:
             log.error('property is not specified.', ctx.start.line)
-        (inst, prop) = inst_prop
         if ctx.property_assign_rhs() is None:
             value = self.get_implicit_value(
                 prop, ctx.getChild(0).getChild(0, SystemRDLParser.S_propertyContext))

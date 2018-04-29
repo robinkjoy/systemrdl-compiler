@@ -32,6 +32,7 @@ class Component:
         self.inst_id = inst_id
         self.parent = parent
         self.comps = []
+        self.signals = []
         self.properties.update(self.UNIVERSAL_PROPERTIES)
         for prop in self.properties:
             setattr(self, prop, self.get_default(prop, defaults))
@@ -140,7 +141,7 @@ class Component:
         return value
 
     def customcopy(self):
-        if isinstance(self, Signal) or isinstance(self, Enum):
+        if isinstance(self, Enum):
             return self
         newcopy = copy.copy(self)
 
@@ -148,6 +149,10 @@ class Component:
             return [y.customcopy() for y in x] if isinstance(x, list) else x.customcopy()
 
         newcopy.comps = [copy_method(x) for x in self.comps]
+        newcopy.signals = [copy.copy(x) for x in self.signals]
+        for sig in newcopy.signals:
+            sig.used = False
+            sig.int_ref = None
         for comp in itercomps(newcopy.comps):
             comp.parent = newcopy
         newcopy.properties = copy.deepcopy(self.properties)
@@ -170,9 +175,12 @@ class Component:
         if comp_type not in allowed_insts[parent_type]:
             log.error(f'{comp_type} instance not allowed in {parent_type}', line)
         inst_id = inst[0].inst_id if isinstance(inst, list) else inst.inst_id
-        if any([x for x in itercomps0(self.comps) if x.inst_id == inst_id]):
+        if any([x for x in list(itercomps0(self.comps))+self.signals if x.inst_id == inst_id]):
             log.error(f'all instance names should be unique within a scope', line)
-        self.comps.append(inst)
+        if comp_type == 'Signal':
+            self.signals.append(inst)
+        else:
+            self.comps.append(inst)
 
     def pprint(self, level=0):
         indent = 4
@@ -191,6 +199,8 @@ class Component:
                 print(' ' * (level + 1) * indent + ']')
             else:
                 comp.pprint(level + 1)
+        for sig in self.signals:
+            sig.pprint(level+1)
         print(' ' * level * indent + '}')
 
     def get_full_name(self):
@@ -234,8 +244,6 @@ class Component:
                             curr_addr = comp.populate_addresses(currl_addr, iaddr_mode, ialign, i)
                         else:
                             curr_addr = comp.populate_addresses(curr_addr, iaddr_mode, ialign, i)
-                elif compl.get_type() == 'Signal':
-                    continue
                 else:
                     curr_addr = compl.populate_addresses(curr_addr, iaddr_mode, ialign)
             return curr_addr

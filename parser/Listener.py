@@ -187,7 +187,7 @@ class Listener(SystemRDLListener):
                 if isinstance(parent, list):
                     log.error(f'array index for {parent[0].inst_id} not specified.', line)
                 inst_id = elemctx.getChild(0).getText()
-                inst = next((x for x in parent.comps
+                inst = next((x for x in parent.comps+parent.signals
                              if is_matching_instance(x, inst_id)), None)
                 if inst is None:
                     log.error(f'{inst_id} not found', elemctx.start.line)
@@ -223,7 +223,7 @@ class Listener(SystemRDLListener):
                     log.error(f'{inst_id} not found', line)
             elif isinstance(elemctx, SystemRDLParser.Instance_ref_elemContext):
                 inst_id = elemctx.getChild(0).getText()
-                inst = next((x for x in parent.comps
+                inst = next((x for x in parent.comps+parent.signals
                              if is_matching_instance(x, inst_id)), None)
                 if inst is None:
                     log.error(f'{inst_id} not found', line)

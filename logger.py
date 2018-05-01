@@ -16,6 +16,7 @@ class CustomFormatter(logging.Formatter):
             record.args = record.args[1:]
         if self.debug:
             record.msg = '{}({})::'.format(record.filename, record.lineno) + record.msg
+        record.msg = record.msg.format(*record.args)
         record.msg = '{}:'.format(record.levelname) + record.msg
         return record.msg
 

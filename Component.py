@@ -14,9 +14,9 @@ def is_power_2(number):
 
 def true_or_assigned(val):
     if val is None or val == '""' or (isinstance(val, bool) and not val):
-        return 0
+        return False
     else:
-        return 1
+        return True
 
 
 class Component:
@@ -47,8 +47,8 @@ class Component:
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         value = self.validate_property(prop, value, line, user_def_props, is_dynamic)
         setattr(self, prop, value)
-        exc = [x for x in self.EXCLUSIVES if prop in x]
-        if exc and sum(map(true_or_assigned, [getattr(self, x) for x in exc[0]])) > 1:
+        exc = next((x for x in self.EXCLUSIVES if prop in x), None)
+        if exc is not None and len([x for x in exc if true_or_assigned(getattr(self, x))]) > 1:
             log.error('Properties {} should be exclusive in {} {}', self.line,
                       ', '.join(exc), self.get_type(),
                       self.def_id if self.inst_id is None else self.inst_id)

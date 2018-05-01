@@ -151,7 +151,8 @@ class Component:
         newcopy.comps = [copy_method(x) for x in self.comps]
         newcopy.signals = [copy.copy(x) for x in self.signals]
         for sig in newcopy.signals:
-            sig.used = False
+            sig.input = False
+            sig.output = False
             sig.int_ref = None
         for comp in itercomps(newcopy.comps):
             comp.parent = newcopy
@@ -296,6 +297,20 @@ class AddrMap(Component):
             self.bit_order = prop
 
     def get_regs_iter(self):
+        def comp_iter(comp):
+            if isinstance(comp, list):
+                for c in comp:
+                    yield from comp_iter(c)
+            elif comp.get_type() == 'RegFile':
+                for c in comp.comps:
+                    yield from comp_iter(c)
+            elif comp.get_type() == 'Register':
+                yield comp
+
+        for comp in self.comps:
+            yield from comp_iter(comp)
+
+    def get_sigs_iter(self):
         def comp_iter(comp):
             if isinstance(comp, list):
                 for c in comp:
@@ -498,7 +513,8 @@ class Signal(Component):
 
     def __init__(self, def_id, inst_id, parent, defaults, line, int_ref=None):
         self.int_ref = int_ref
-        self.used = False
+        self.input = False
+        self.output = False
         self.properties = {
             'signalwidth': 'numeric',
             'sync': 'boolean',

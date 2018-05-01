@@ -120,7 +120,7 @@ class Listener(SystemRDLListener):
                 line = ctx.children[i + 1].start.line
                 return extract_num(num_str, line)
 
-    def extract_rhs_value(self, ctx, prop):
+    def extract_rhs_value(self, ctx, lprop):
         if ctx.property_rvalue_constant() is not None:
             value_str = ctx.getText()
             childctx = ctx.getChild(0)
@@ -135,13 +135,18 @@ class Listener(SystemRDLListener):
         elif ctx.enum_body() is not None:
             return self.extract_enum_body(ctx.getChild(1), Component.Enum(None))
         elif ctx.instance_ref() is not None:
-            if prop == 'encode':
+            if lprop == 'encode':
                 # encode value is enum definition. not instances
                 return self.get_definition(Component.Enum, ctx.getText())
             else:
                 inst, prop = self.extract_instance_ref_rhs(ctx.getChild(0))
                 if inst.get_type() == 'Signal':
-                    inst.used = True
+                    if lprop in ['anded', 'ored', 'xored', 'swmod', 'swacc', 'overflow', 'underflow']:
+                        if inst.output:
+                            log.error(f'signal {inst.inst_id} already driven', ctx.start.line)
+                        inst.output = True
+                    else:
+                        inst.input = True
                 if prop is not None:
                     inst = Component.Signal(None, inst.inst_id+'_'+prop, None, [], (inst, prop))
                     self.internal_signals.append(inst)
@@ -454,9 +459,6 @@ class Listener(SystemRDLListener):
                     temp.parent.bit_order = temp.bit_order
                     temp = temp.parent
             # set position if not explicitly specified
-            log.debug(str(ctx.start.line))
-            log.debug(str(inst))
-            log.debug(str(parent))
             if inst.position == (None, None):
                 if len(parent.comps) == 0:
                     last_index = -1 if parent.bit_order == 'lsb0' else parent.regwidth
@@ -482,7 +484,6 @@ class Listener(SystemRDLListener):
         else:
             parent.add_comp(inst, ctx.start.line)
         # add to scoped insts for rhs reference
-        log.debug(str(self.scoped_insts))
         if anon:
             self.scoped_insts[-2].append(inst)
         else:

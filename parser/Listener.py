@@ -392,6 +392,9 @@ class Listener(SystemRDLListener):
             # set fieldwidth to 1 when no width/msb-lsb specified
             if comp_type == 'Field' and inst.fieldwidth is None:
                 inst.fieldwidth = 1
+            # set signalwidth to 1 when no width specified
+            if comp_type == 'Signal' and inst.signalwidth is None:
+                inst.signalwidth = 1
         else:
             indctx = ctx.getChild(1).getChild
             # array indices

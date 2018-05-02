@@ -71,7 +71,7 @@ def main():
         if args.v_print:
             am.pprint()
         log.info(f'Generating RTL for AddrMap {am.def_id}..')
-        rtl_gen.generate_rtl(args.lang, am, last_addr)
+        rtl_gen.generate_rtl(args.lang, am, last_addr, listener.signals, listener.internal_signals)
 
     log.info('Done.')
     logging.shutdown()

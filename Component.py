@@ -251,6 +251,15 @@ class Component:
         elif self.get_type() == 'Register':
             return self.addr + self.regwidth // 8
 
+    def get_sigs_iter(self):
+        yield from self.signals
+        for comp in self.comps:
+            if isinstance(comp, list):
+                for c in comp:
+                    yield from c.get_sigs_iter()
+            else:
+                yield from comp.get_sigs_iter()
+
 
 class AddrMap(Component):
     NON_DYNAMIC_PROPERTIES = ['alignment', 'sharedextbus', 'addressing',
@@ -297,20 +306,6 @@ class AddrMap(Component):
             self.bit_order = prop
 
     def get_regs_iter(self):
-        def comp_iter(comp):
-            if isinstance(comp, list):
-                for c in comp:
-                    yield from comp_iter(c)
-            elif comp.get_type() == 'RegFile':
-                for c in comp.comps:
-                    yield from comp_iter(c)
-            elif comp.get_type() == 'Register':
-                yield comp
-
-        for comp in self.comps:
-            yield from comp_iter(comp)
-
-    def get_sigs_iter(self):
         def comp_iter(comp):
             if isinstance(comp, list):
                 for c in comp:

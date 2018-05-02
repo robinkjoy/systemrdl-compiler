@@ -14,7 +14,8 @@ st_out = '    {name} : out std_logic;\n'
 sv_in = '    {name} : in  std_logic_vector({width} downto 0);\n'
 sv_out = '    {name} : out std_logic_vector({width} downto 0);\n'
 clock_comment = '    -- Clocks\n'
-pl_port_comment = '    -- PL Ports\n'
+pl_port_field_comment = '    -- PL Field Ports\n'
+pl_port_signal_comment = '    -- Custom Signal Ports\n'
 axi_ports_end = '''    -- AXILite Signal
     s_axi_aclk : in  std_logic;
     s_axi_areset : in  std_logic;
@@ -69,7 +70,7 @@ constants = '''
   constant OPT_MEM_ADDR_BITS : integer := {};
 '''
 
-internal_signals = '''
+axi_internal_signals = '''
   -- AXI4LITE signals
   signal axi_awaddr  : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := (others => '0');
   signal axi_awready : std_logic := '0';
@@ -86,6 +87,7 @@ internal_signals = '''
   signal slv_reg_wren : std_logic := '0';
   signal reg_data_out : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := (others => '0');
 
+  -- Registers
 '''
 
 reg_signal = '  signal {name} : std_logic_vector({width} downto 0) := (others => \'0\');\n'

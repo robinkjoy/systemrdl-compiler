@@ -15,8 +15,9 @@ st_out = '    output wire {name},\n'
 sv_in = '    input  wire [{width}:0] {name},\n'
 sv_out = '    output wire [{width}:0] {name},\n'
 clock_comment = '    // Clocks\n'
-pl_port_comment = '    // PL Ports\n'
-axi_ports_end = '''    // AXILite Signal
+pl_port_field_comment = '    // PL Field Ports\n'
+pl_port_signal_comment = '    // Custom Signal Ports\n'
+axi_ports_end = '''    // AXILite Signals
     input wire  s_axi_aclk,
     input wire  s_axi_areset,
     input wire [C_S_AXI_ADDR_WIDTH-1 : 0] s_axi_awaddr,
@@ -48,7 +49,7 @@ constants = '''
   localparam integer OPT_MEM_ADDR_BITS = {};
 '''
 
-internal_signals = '''
+axi_internal_signals = '''
   // AXI4LITE signals
   reg [C_S_AXI_ADDR_WIDTH-1 : 0]   axi_awaddr;
   reg    axi_awready;
@@ -65,7 +66,8 @@ internal_signals = '''
   wire   slv_reg_wren;
   reg [C_S_AXI_DATA_WIDTH-1:0]   reg_data_out;
   integer   byte_index;
-
+  
+  // Registers
 '''
 
 reg_signal = '  reg [{width}:0] {name};\n'

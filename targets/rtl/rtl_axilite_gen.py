@@ -12,25 +12,34 @@ def import_strings(lang):
         import targets.rtl.axilite_vhdl_str as rtl_str
 
 
-def write_ports(f, regs):
-    f.write(rtl_str.pl_port_comment)
+def write_ports_fields(f, regs):
+    f.write(rtl_str.pl_port_field_comment)
     for reg in regs:
         for field in reg.comps:
             if field.hw == 'na':
                 continue
             port_name = field.get_full_name()
-            if field.position[0] == field.position[1]:
-                if 'w' in field.hw:
-                    f.write(rtl_str.st_in.format(name=port_name+'_i'))
-                if 'r' in field.hw:
-                    f.write(rtl_str.st_out.format(name=port_name+'_o'))
-            else:
-                if 'w' in field.hw:
-                    f.write(rtl_str.sv_in.format(name=port_name+'_i',
-                                                 width=abs(field.position[0] - field.position[1])))
-                if 'r' in field.hw:
-                    f.write(rtl_str.sv_out.format(name=port_name+'_o',
-                                                 width=abs(field.position[0] - field.position[1])))
+            if 'w' in field.hw:
+                port_str = rtl_str.st_in if field.fieldwidth == 1 else rtl_str.sv_in
+                f.write(port_str.format(name=port_name+'_i',
+                                             width=field.fieldwidth))
+            if 'r' in field.hw:
+                port_str = rtl_str.st_out if field.fieldwidth == 1 else rtl_str.sv_out
+                f.write(port_str.format(name=port_name+'_o',
+                                             width=field.fieldwidth))
+
+
+def write_ports_signals(f, signals):
+    f.write(rtl_str.pl_port_signal_comment)
+    for sig in signals:
+        if not sig.input and not sig.output:
+            log.warning(f'signal {sig.inst_id} is unused. skipping', sig.line)
+        if sig.input and not sig.output:
+            port_str = rtl_str.st_in if sig.signalwidth == 1 else rtl_str.sv_in
+            f.write(port_str.format(name=sig.get_full_name(), width=sig.signalwidth))
+        if not sig.input and sig.output:
+            port_str = rtl_str.st_out if sig.signalwidth == 1 else rtl_str.sv_out
+            f.write(port_str.format(name=sig.get_full_name(), width=sig.signalwidth))
 
 
 def write_reg_signals(f, regs):
@@ -164,7 +173,7 @@ def write_sts_sig_assgns(f, regs):
 
 
 # main function
-def generate_rtl(lang, addrmap, last_addr):
+def generate_rtl(lang, addrmap, last_addr, root_sigs, internal_sigs):
     import_strings(lang)
     regs = list(addrmap.get_regs_iter())
     file_ext = 'v' if lang == 'verilog' else 'vhd'
@@ -172,11 +181,13 @@ def generate_rtl(lang, addrmap, last_addr):
     f = open(filename, 'w')
     f.write(rtl_str.libraries)
     f.write(rtl_str.entity_header.format(32, 8))
-    write_ports(f, regs)
+    signals = root_sigs+list(addrmap.get_sigs_iter())
+    write_ports_fields(f, regs)
+    write_ports_signals(f, signals)
     f.write(rtl_str.axi_ports_end)
     mem_addr_bits = ceil(log2(max(last_addr, 31))) - 2  # axi width = 32, access = 32 fixme
     f.write(rtl_str.constants.format(mem_addr_bits - 1))
-    f.write(rtl_str.internal_signals)
+    f.write(rtl_str.axi_internal_signals)
     write_reg_signals(f, regs)
     f.write('\n')
     f.write(rtl_str.begin_io_assgns_axi_logic)

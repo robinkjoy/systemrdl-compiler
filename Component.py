@@ -120,8 +120,6 @@ class Component:
                 log.error(f'Property \'{prop}\' cannot be assigned dynamically.', line)
             if not self.check_type(prop, value, line):
                 log.error(f'Property \'{prop}\' expected {self.properties[prop]}.', line)
-            if prop in ('signalwidth', 'fieldwidth') and getattr(self, prop) not in (None, value):
-                log.error('instantiation width does not match explicitly defined width.', line)
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -482,20 +480,41 @@ class Field(Component):
             log.error('Verilog style integer should be used for non-zero reset values.', line)  # (7.5.1.a)
         return True
 
+    @staticmethod
+    def validate_reset_next(fieldwidth, prop, value, line):
+        if isinstance(value, Signal):
+            if value.signalwidth != fieldwidth:
+                log.error(f'size of {prop} value signal does not match field width', line)
+        elif isinstance(value, Field):
+            if value.fieldwidth != fieldwidth:
+                log.error(f'size of {prop} value field does not match field width', line)
+
+    def validate_property(self, prop, value, line, user_def_props, is_dynamic):
+        value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
+        if prop == 'fieldwidth' and self.fieldwidth not in (None, value):
+            log.error('field instantiation width does not match explicitly defined field width.', line)
+        if prop in ['reset', 'next']:
+            if value == self:
+                log.error(f'{prop} cannot be self-referencing', line)
+            if self.fieldwidth is not None:
+                Field.validate_reset_next(self.fieldwidth, prop, value, line)
+                if prop == 'reset' and isinstance(value, tuple):
+                    if value[0] != self.fieldwidth:
+                        log.error(f'size of {prop} value does not match field width', line)
+                    value = value[1]
+        if prop == 'fieldwidth':
+            if getattr(self, 'reset', None) is not None:
+                Field.validate_reset_next(value, 'reset', self.reset, line)
+            if getattr(self, 'next', None) is not None:
+                Field.validate_reset_next(value, 'next', self.next, line)
+        return value
+
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         super().set_property(prop, value, line, user_def_props, is_dynamic)
         invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
         if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:  # (Table 9)
             log.error('invalid field access pair in Field {}', self.line,
                       self.inst_id)
-        # reset size
-        if prop == 'reset' and self.fieldwidth is not None:
-            if isinstance(self.reset, tuple) and self.reset[0] != self.fieldwidth:
-                log.warning('reset width does not match fieldwidth in Field {}', self.line,
-                            self.inst_id)
-            if isinstance(self.reset, Signal) and self.reset.signalwidth != self.fieldwidth:
-                log.warning('reset value signal width does not match fieldwidth in Field {}', self.line,
-                            self.inst_id)
 
     def pprint(self, level=0):
         super().pprint(level)
@@ -520,6 +539,12 @@ class Signal(Component):
             'activehigh': 'boolean'
         }
         super().__init__(def_id, inst_id, parent, defaults, line)
+
+    def validate_property(self, prop, value, line, user_def_props, is_dynamic):
+        value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
+        if prop == 'signalwidth' and self.signalwidth not in (None, value):
+            log.error('signal instantiation width does not match explicitly defined signal width.', line)
+        return value
 
 
 class Enum(Component):

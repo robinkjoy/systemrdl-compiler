@@ -14,11 +14,16 @@ def extract_num(string, line):
         return int(string)
     elif string[0:2] in ('0x', '0X'):
         return int(string, 16)
+    # sized Number
     string = re.split('\'([bodh])', string, 1, flags=re.IGNORECASE)
     if string[2][0] == '_':
         log.error('first position of value should not be \'_\'.', line)
     base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1].lower()]
-    return int(string[0]), int(string[2].translate({ord('_'): None}), base)
+    size = int(string[0])
+    number = int(string[2].translate({ord('_'): None}), base)
+    if number >= 2**size:
+        log.error('Number does not fit within specified bit width', line)
+    return size, number
 
 
 def itercomp(comp):
@@ -148,8 +153,9 @@ class Listener(SystemRDLListener):
                     else:
                         inst.input = True
                 if prop is not None:
-                    inst = Component.Signal(None, inst.inst_id+'_'+prop, None, [], (inst, prop))
-                    self.internal_signals.append(inst)
+                    sig_inst = Component.Signal(None, inst.inst_id+'_'+prop, None, [], (inst, prop))
+                    setattr(sig_inst, 'signalwidth', 1)
+                    self.internal_signals.append(sig_inst)
                 return inst
         elif ctx.concat() is not None:
             log.error('concat not implemented.', ctx.start.line)
@@ -389,12 +395,12 @@ class Listener(SystemRDLListener):
         # instatiation
         if ctx.array() is None:
             inst = comp if anon else comp.customcopy()
-            # set fieldwidth to 1 when no width/msb-lsb specified
-            if comp_type == 'Field' and inst.fieldwidth is None:
-                inst.fieldwidth = 1
-            # set signalwidth to 1 when no width specified
-            if comp_type == 'Signal' and inst.signalwidth is None:
-                inst.signalwidth = 1
+            # set fieldwidth/signalwidth to 1 when no width specified
+            if comp_type in ['Field', 'Signal']:
+                inst = comp if anon else comp.customcopy()
+                width = {'Field': 'fieldwidth',
+                         'Signal': 'signalwidth'}[comp_type]
+                inst.set_property(width, 1, ctx.start.line, [], False)
         else:
             indctx = ctx.getChild(1).getChild
             # array indices
@@ -414,16 +420,15 @@ class Listener(SystemRDLListener):
                 size = extract_num(indctx(1).getText(), indctx(1).start.line)
                 if not isinstance(size, int):
                     log.error('array size should be unsizedNumeric', ctx.start.line)
-                if comp_type in ('Field', 'Signal'):
+                if comp_type in ['Field', 'Signal']:
                     inst = comp if anon else comp.customcopy()
+                    width = {'Field': 'fieldwidth',
+                             'Signal': 'signalwidth'}[comp_type]
+                    inst.set_property(width, size, ctx.start.line, [], False)
                 else:
                     inst0 = [comp if anon else comp.customcopy()]
                     inst = inst0 + [comp.customcopy() for _ in range(size - 1)]
                     is_array = True
-            if comp_type in ('Field', 'Signal'):
-                width = {'Field': 'fieldwidth',
-                         'Signal': 'signalwidth'}[comp_type]
-                inst.set_property(width, size, ctx.start.line, [], False)
         inst_id = ctx.getChild(0).getText()
         # iterate through insts and set parent, name and line
         for i in itercomp(inst):

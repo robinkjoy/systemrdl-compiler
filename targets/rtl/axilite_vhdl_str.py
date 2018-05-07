@@ -13,7 +13,10 @@ st_in = '    {name} : in  std_logic;\n'
 st_out = '    {name} : out std_logic;\n'
 sv_in = '    {name} : in  std_logic_vector({width} downto 0);\n'
 sv_out = '    {name} : out std_logic_vector({width} downto 0);\n'
-clock_comment = '    -- Clocks\n'
+field_reset = '''\
+    -- Field Reset
+    rst : in std_logic;
+'''
 pl_port_field_comment = '    -- PL Field Ports\n'
 pl_port_signal_comment = '    -- Custom Signal Ports\n'
 axi_ports_end = '''    -- AXILite Signal
@@ -91,6 +94,9 @@ axi_internal_signals = '''
 '''
 
 reg_signal = '  signal {name} : std_logic_vector({width} downto 0) := (others => \'0\');\n'
+reg_signal_1bit = '  signal {name} : std_logic := \'0\';\n'
+
+write_addr_decode_comment = '\n  -- Write Address Decode Signals\n'
 
 begin_io_assgns_axi_logic = '''
 begin
@@ -151,40 +157,136 @@ begin
   slv_reg_wren <= axi_wready and s_axi_wvalid and axi_awready and s_axi_awvalid;
 '''
 
-axi_write_header = '''
-  process (s_axi_aclk)
-    variable loc_addr : std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
-  begin
-    if rising_edge(s_axi_aclk) then
-      if s_axi_areset = '1' then'''
-axi_write_reset_reg = '\n'+'  '*4+'{name}({msb} downto {lsb}) <= (others => \'0\');'
-axi_write_else_header = '''
-      else
-        loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
-        if slv_reg_wren = '1' then'''
-axi_write_assign = '''
-          if loc_addr = b"{val}" then
-            for i in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-              if s_axi_wstrb(i) = '1' then
-                {name}(i*8+7 downto i*8) <= s_axi_wdata(i*8+7 downto i*8);
-              end if;
-            end loop;'''
-axi_write_assign_else = '\n          else'
-axi_write_assign_end = '\n          end if;'
-axi_write_else = '\n        else'
-axi_sclr_part1 = ''
-axi_sclr_part2 = ' & '
-axi_sclr_part3 = '({} downto {})'
-axi_sclr_part4 = '"{val}"'
-axi_sclr_part5 = ';'
-axi_write_footer = '''
-        end if;
+write_addr_decode_header = '''
+  -- Write Address Decoder
+  process(axi_awaddr or slv_reg_wren) begin
+'''
+
+write_addr_decode_default = '''\
+    {name}_axi_we <= '0';
+'''
+
+write_addr_decode_case = '''\
+    case axi_awaddr is
+'''
+
+write_addr_decode = '''\
+      when "{addr:0{bits}b}" => {name}_axi_we <= slv_reg_wren;
+'''
+
+write_addr_decode_footer = '''\
+    end case
+  end
+'''
+
+write_comment = '''
+  -- Field writes
+'''
+
+reset_value = '"{value:0{bits}b}"'
+
+axi_write_reset_sync = '''\
+  -- {field_name}
+  process (clk) begin
+    if rising_edge(clk) begin
+      if {rst} = '{active}' then
+        {reg_name}({msb} downto {lsb}) <= {value};
+      els'''
+
+axi_write_reset_async = '''\
+  -- {field_name}
+  process (clk, {rst}) begin
+    if {rst} = '{active}' then
+      {reg_name}({msb} downto {lsb}) <= {value};
+    elsif rising_edge(clk) then
+      '''
+
+axi_write_field_else = '      els'
+
+axi_write_field_hw_we = '''\
+if {ctrl} = '{active}' then
+        {reg}({msb} downto {lsb}) <= {field};
+'''
+
+axi_write_field_hw_we_mask = '''\
+if {ctrl} = '{active}' then
+        for i in 0 to {size} loop
+          if {mask}(i) = '{mask_active}' then
+            {reg}({lsb}+i) <= {field};
+          end if;
+        end loop;
+'''
+
+axi_write_field_hw_set = '''\
+if {ctrl} = '{active}' then
+        {reg}({msb} downto {lsb}) <= "{field}";
+'''
+
+axi_write_field_hw_set_mask = '''\
+if {ctrl} = '{active}' then
+        for i in 0 to {size} loop
+          if {mask}(i) = '{mask_active}' then
+            {reg}({lsb}+i) <= '{field}';
+          end if;
+        end loop;
+'''
+
+axi_write_field_sw = '''if {reg}_axi_we = '1' then
+        {reg}({msb} downto {lsb}) <= s_axi_wdata({msb} downto {lsb});
+'''
+
+axi_write_field_hw_pre = '''      else
+  '''
+
+axi_write_field_hw = '      {reg}({msb} downto {lsb}) <= {field}_i;'
+
+axi_write_field_hw_post = ''
+
+axi_write_field_hw_clr = '''else
+        {reg}({msb} downto {lsb}) <= "{value}";
+'''
+
+axi_write_field_footer = '''
       end if;
     end if;
   end process;
-'''
-axi_logic2 = '''
 
+'''
+
+# axi_write_header = '''
+#   process (s_axi_aclk)
+#     variable loc_addr : std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
+#   begin
+#     if rising_edge(s_axi_aclk) then
+#       if s_axi_areset = '1' then'''
+# axi_write_reset_reg = '\n'+'  '*4+'{name}({msb} downto {lsb}) <= (others => \'0\');'
+# axi_write_else_header = '''
+#       else
+#         loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
+#         if slv_reg_wren = '1' then'''
+# axi_write_assign = '''
+#           if loc_addr = b"{val}" then
+#             for i in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
+#               if s_axi_wstrb(i) = '1' then
+#                 {name}(i*8+7 downto i*8) <= s_axi_wdata(i*8+7 downto i*8);
+#               end if;
+#             end loop;'''
+# axi_write_assign_else = '\n          else'
+# axi_write_assign_end = '\n          end if;'
+# axi_write_else = '\n        else'
+# axi_sclr_part1 = ''
+# axi_sclr_part2 = ' & '
+# axi_sclr_part3 = '({} downto {})'
+# axi_sclr_part4 = '"{val}"'
+# axi_sclr_part5 = ';'
+# axi_write_footer = '''
+#         end if;
+#       end if;
+#     end if;
+#   end process;
+# '''
+axi_logic2 = '''
+  -- Write Response
   process (s_axi_aclk)
   begin
     if rising_edge(s_axi_aclk) then

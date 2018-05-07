@@ -105,7 +105,7 @@ class Component:
                 return True
             elif prop_type == 'precedenceType' and value in ('sw', 'hw'):
                 return True
-            elif prop_type == 'reference' and isinstance(value, Component):
+            elif prop_type == 'reference' and isinstance(value, Signal):
                 return True
             elif prop_type == 'reference2enum' and isinstance(value, Enum):
                 return True
@@ -174,7 +174,7 @@ class Component:
         if comp_type not in allowed_insts[parent_type]:
             log.error(f'{comp_type} instance not allowed in {parent_type}', line)
         inst_id = inst[0].inst_id if isinstance(inst, list) else inst.inst_id
-        if any([x for x in list(itercomps0(self.comps))+self.signals if x.inst_id == inst_id]):
+        if any([x for x in list(itercomps0(self.comps)) + self.signals if x.inst_id == inst_id]):
             log.error(f'all instance names should be unique within a scope', line)
         if comp_type == 'Signal':
             self.signals.append(inst)
@@ -199,7 +199,7 @@ class Component:
             else:
                 comp.pprint(level + 1)
         for sig in self.signals:
-            sig.pprint(level+1)
+            sig.pprint(level + 1)
         print(' ' * level * indent + '}')
 
     def get_full_name(self):
@@ -435,10 +435,10 @@ class Field(Component):
             'ored': ['boolean', 'reference'],
             'xored': ['boolean', 'reference'],
             'fieldwidth': 'numeric',
-            'hwclr': 'boolean',
-            'hwset': 'boolean',
-            'hwenable': 'sizedNumeric',
-            'hwmask': 'sizedNumeric',
+            'hwclr': ['boolean', 'reference'],
+            'hwset': ['boolean', 'reference'],
+            'hwenable': 'reference',
+            'hwmask': 'reference',
             # Counter field properties
             'counter': 'boolean',
             'threshold': ['boolean', 'reference'],
@@ -507,6 +507,21 @@ class Field(Component):
                 Field.validate_reset_next(value, 'reset', self.reset, line)
             if getattr(self, 'next', None) is not None:
                 Field.validate_reset_next(value, 'next', self.next, line)
+        if isinstance(value, Signal) and prop in ['resetsignal', 'swwe', 'swwel', 'swmod', 'swacc', 'we', 'wel',
+                                                  'anded', 'ored', 'xored', 'hwclr', 'hwset', 'overflow', 'underflow',
+                                                  'incr', 'decr', ]:
+            if value.signalwidth != 1:
+                log.error(f'width of {prop} signal should be 1', line)
+        if isinstance(value, Signal) and self.fieldwidth is not None and prop in ['reset', 'next', 'hwenable',
+                                                                                  'hwmask', 'threshold', 'saturate',
+                                                                                  'incrthreshold', 'incrsaturate',
+                                                                                  'decrthreshold',
+                                                                                  'decrsaturate', 'incrvalue',
+                                                                                  'decrvalue', 'enable', 'mask',
+                                                                                  'haltenable', 'haltmask']:
+            if value.signalwidth != self.fieldwidth:
+                log.error(f'size of {prop} value signal does not match field width', line)
+
         return value
 
     def set_property(self, prop, value, line, user_def_props, is_dynamic):

@@ -127,7 +127,7 @@ def verilog_preproc_line(i, line, ifs, line_info, perl_pp_enabled):
             log.error('Syntax error, expected filename', i)
         if match.group(2):
             log.error('Syntax error, unexpected chars found', i)
-        (data_pp, inc_line_infos) = preproc(match.group(1), perl_pp_enabled, line_info)
+        (data_pp, inc_line_infos) = preproc(match.group(1), perl_pp_enabled)
         return data_pp, ifs, inc_line_infos
     # replace macro
     p_macro = re.compile(r'`([a-zA-Z0-9_]+)')

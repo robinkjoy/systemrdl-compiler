@@ -21,7 +21,7 @@ def extract_num(string, line):
     base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1].lower()]
     size = int(string[0])
     number = int(string[2].translate({ord('_'): None}), base)
-    if number >= 2**size:
+    if number >= 2 ** size:
         log.error('Number does not fit within specified bit width', line)
     return size, number
 
@@ -96,7 +96,7 @@ class Listener(SystemRDLListener):
     def get_definition(self, def_type, def_id):
         for defs in reversed(self.definitions):
             definition = next((x for x in defs
-                          if isinstance(x, def_type) and x.def_id == def_id), None)
+                               if isinstance(x, def_type) and x.def_id == def_id), None)
             if definition:
                 return definition
         return None
@@ -111,7 +111,8 @@ class Listener(SystemRDLListener):
             log.error('defaults can be assigned only once per scope.', line)
         self.defaults[-1].update({default[0]: default[1]})
 
-    def get_post_inst_prop_value(self, ctx, prop):
+    @staticmethod
+    def get_post_inst_prop_value(ctx, prop):
         prop_token = {'reset': ('EQ', '='),
                       'at_addr': ('AT', '@'),
                       'inc_addr': ('INC', '+='),
@@ -152,15 +153,22 @@ class Listener(SystemRDLListener):
                         inst.output = True
                     else:
                         inst.input = True
+                    return inst
                 if prop is not None:
-                    sig_inst = Component.Signal(None, inst.inst_id+'_'+prop, None, [], (inst, prop))
+                    sig_inst = Component.Signal(None, inst.inst_id + '_' + prop, None, [], (inst, prop))
                     setattr(sig_inst, 'signalwidth', 1)
                     self.internal_signals.append(sig_inst)
-                return inst
+                    return sig_inst
+                elif inst.get_type() == 'Field':
+                    sig_inst = Component.Signal(None, inst.inst_id + '_' + prop, None, [], (inst, None))
+                    setattr(sig_inst, 'signalwidth', inst.fieldwidth)
+                    self.internal_signals.append(sig_inst)
+                    return sig_inst
         elif ctx.concat() is not None:
             log.error('concat not implemented.', ctx.start.line)
 
-    def extract_enum_body(self, ctx, enum):
+    @staticmethod
+    def extract_enum_body(ctx, enum):
         if len(ctx.enum_entry()) == 0:
             log.error('no entries in enum.', ctx.start.line)
         for entryctx in ctx.children:
@@ -198,7 +206,7 @@ class Listener(SystemRDLListener):
                 if isinstance(parent, list):
                     log.error(f'array index for {parent[0].inst_id} not specified.', line)
                 inst_id = elemctx.getChild(0).getText()
-                inst = next((x for x in parent.comps+parent.signals
+                inst = next((x for x in parent.comps + parent.signals
                              if is_matching_instance(x, inst_id)), None)
                 if inst is None:
                     log.error(f'{inst_id} not found', elemctx.start.line)
@@ -227,14 +235,14 @@ class Listener(SystemRDLListener):
                 inst_id = elemctx.getChild(0).getText()
                 for insts in reversed(self.scoped_insts):
                     inst = next((x for x in insts
-                                       if is_matching_instance(x, inst_id)), None)
+                                 if is_matching_instance(x, inst_id)), None)
                     if inst:
                         break
                 if inst is None:
                     log.error(f'{inst_id} not found', line)
             elif isinstance(elemctx, SystemRDLParser.Instance_ref_elemContext):
                 inst_id = elemctx.getChild(0).getText()
-                inst = next((x for x in parent.comps+parent.signals
+                inst = next((x for x in parent.comps + parent.signals
                              if is_matching_instance(x, inst_id)), None)
                 if inst is None:
                     log.error(f'{inst_id} not found', line)
@@ -255,7 +263,8 @@ class Listener(SystemRDLListener):
             parent = inst
         return inst, prop
 
-    def get_implicit_value(self, prop, ctx):
+    @staticmethod
+    def get_implicit_value(ctx):
         if ctx.s_id() is None:  # not user defined property
             return True
         else:
@@ -414,7 +423,6 @@ class Listener(SystemRDLListener):
                     log.error('array indices should be unsizedNumeric', ctx.start.line)
                 inst = comp if anon else comp.customcopy()
                 inst.position = (left, right)
-                size = abs(left - right) + 1
             # array declaration
             else:
                 size = extract_num(indctx(1).getText(), indctx(1).start.line)
@@ -539,7 +547,7 @@ class Listener(SystemRDLListener):
                 prop = ctx.getChild(0).getText()
                 if ctx.property_assign_rhs() is None:
                     value = self.get_implicit_value(
-                        prop, ctx.getChild(0))
+                        ctx.getChild(0))
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
                 self.check_property_already_set(comp, prop, ctx.start.line)
@@ -553,7 +561,7 @@ class Listener(SystemRDLListener):
             log.error('property is not specified.', ctx.start.line)
         if ctx.property_assign_rhs() is None:
             value = self.get_implicit_value(
-                prop, ctx.getChild(0).getChild(0, SystemRDLParser.S_propertyContext))
+                ctx.getChild(0).getChild(0, SystemRDLParser.S_propertyContext))
         else:
             value = self.extract_rhs_value(ctx.getChild(2), prop)
         self.check_property_already_set(inst, prop, ctx.start.line)

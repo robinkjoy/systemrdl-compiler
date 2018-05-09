@@ -408,6 +408,11 @@ class Field(Component):
         ['haltenable', 'haltmask'],  # (7.9.1.b)
         ['nonsticky', 'sticky', 'stickybit'],  # (7.9.1.c)
     ]
+    OUTPUT_SIG_PROPS = ['swmod', 'swacc', 'anded', 'ored', 'xored', 'overflow', 'underflow']
+    ONEBIT_SIG_PROPS = ['resetsignal', 'swwe', 'swwel', 'swmod', 'swacc', 'we', 'wel', 'anded', 'ored', 'xored',
+                        'hwclr', 'hwset', 'overflow', 'underflow', 'incr', 'decr']
+    FIELDWIDTH_SIG_PROPS = ['next', 'reset', 'hwenable', 'hwmask', 'threshold', 'saturate', 'incrthreshold',
+                            'incrsaturate', 'decrthreshold', 'decrsaturate', 'enable', 'mask', 'haltenable', 'haltmask']
 
     def __init__(self, def_id, inst_id, parent, defaults, line):
         self.properties = {
@@ -480,15 +485,6 @@ class Field(Component):
             log.error('Verilog style integer should be used for non-zero reset values.', line)  # (7.5.1.a)
         return True
 
-    @staticmethod
-    def validate_reset_next(fieldwidth, prop, value, line):
-        if isinstance(value, Signal):
-            if value.signalwidth != fieldwidth:
-                log.error(f'size of {prop} value signal does not match field width', line)
-        elif isinstance(value, Field):
-            if value.fieldwidth != fieldwidth:
-                log.error(f'size of {prop} value field does not match field width', line)
-
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
         if prop == 'fieldwidth' and self.fieldwidth not in (None, value):
@@ -496,31 +492,24 @@ class Field(Component):
         if prop in ['reset', 'next']:
             if value == self:
                 log.error(f'{prop} cannot be self-referencing', line)
-            if self.fieldwidth is not None:
-                Field.validate_reset_next(self.fieldwidth, prop, value, line)
-                if prop == 'reset' and isinstance(value, tuple):
-                    if value[0] != self.fieldwidth:
-                        log.error(f'size of {prop} value does not match field width', line)
-                    value = value[1]
+        if prop == 'reset' and self.fieldwidth is not None and isinstance(value, tuple):
+            if value[0] != self.fieldwidth:
+                log.error(f'size of {prop} value does not match field width', line)
+            value = value[1]
         if prop == 'fieldwidth':
-            if getattr(self, 'reset', None) is not None:
-                Field.validate_reset_next(value, 'reset', self.reset, line)
-            if getattr(self, 'next', None) is not None:
-                Field.validate_reset_next(value, 'next', self.next, line)
-        if isinstance(value, Signal) and prop in ['resetsignal', 'swwe', 'swwel', 'swmod', 'swacc', 'we', 'wel',
-                                                  'anded', 'ored', 'xored', 'hwclr', 'hwset', 'overflow', 'underflow',
-                                                  'incr', 'decr', ]:
-            if value.signalwidth != 1:
-                log.error(f'width of {prop} signal should be 1', line)
-        if isinstance(value, Signal) and self.fieldwidth is not None and prop in ['reset', 'next', 'hwenable',
-                                                                                  'hwmask', 'threshold', 'saturate',
-                                                                                  'incrthreshold', 'incrsaturate',
-                                                                                  'decrthreshold',
-                                                                                  'decrsaturate', 'incrvalue',
-                                                                                  'decrvalue', 'enable', 'mask',
-                                                                                  'haltenable', 'haltmask']:
-            if value.signalwidth != self.fieldwidth:
-                log.error(f'size of {prop} value signal does not match field width', line)
+            if isinstance(self.reset, tuple):
+                if self.reset[0] != value:
+                    log.error(f'size of reset value does not match field width', line)
+                self.reset = self.reset[1]
+            for fwprop in self.FIELDWIDTH_SIG_PROPS:
+                fwpropval = getattr(self, fwprop, None)
+                if isinstance(fwpropval, Signal) and fwpropval.signalwidth != value:
+                    log.error(f'size of {fwprop} value field does not match field width', line)
+        if isinstance(value, Signal) and prop in self.ONEBIT_SIG_PROPS and value.signalwidth != 1:
+            log.error(f'width of {prop} signal should be 1', line)
+        if (isinstance(value, Signal) and self.fieldwidth is not None and
+                prop in self.FIELDWIDTH_SIG_PROPS and value.signalwidth != self.fieldwidth):
+            log.error(f'size of {prop} value signal does not match field width', line)
 
         return value
 
@@ -540,10 +529,10 @@ class Signal(Component):
     NON_DYNAMIC_PROPERTIES = ['signalwidth']
     EXCLUSIVES = [['sync', 'async'], ['activehigh', 'activelow']]
 
-    def __init__(self, def_id, inst_id, parent, defaults, line, int_ref=None):
-        self.int_ref = int_ref
+    def __init__(self, def_id, inst_id, parent, defaults, line):
         self.input = False
         self.output = False
+        self.int_ref = None
         self.properties = {
             'signalwidth': 'numeric',
             'sync': 'boolean',

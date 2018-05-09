@@ -97,67 +97,25 @@ reg_signal = '  signal {name} : std_logic_vector({width} downto 0) := (others =>
 reg_signal_1bit = '  signal {name} : std_logic := \'0\';\n'
 
 write_addr_decode_comment = '\n  -- Write Address Decode Signals\n'
+internal_signals_comment = '\n  -- Internal Signals\n'
 
-begin_io_assgns_axi_logic = '''
+begin = '''
 begin
-
-  -- I/O Connections assignments
-  s_axi_awready <= axi_awready;
-  s_axi_wready  <= axi_wready;
-  s_axi_bresp   <= axi_bresp;
-  s_axi_bvalid  <= axi_bvalid;
-  s_axi_arready <= axi_arready;
-  s_axi_rdata   <= axi_rdata;
-  s_axi_rresp   <= axi_rresp;
-  s_axi_rvalid  <= axi_rvalid;
-
-  process (s_axi_aclk)
-  begin
-    if rising_edge(s_axi_aclk) then
-      if s_axi_areset = '1' then
-        axi_awready <= '0';
-      else
-        if axi_awready = '0' and s_axi_awvalid = '1' and s_axi_wvalid = '1' then
-          axi_awready <= '1';
-        else
-          axi_awready <= '0';
-        end if;
-      end if;
-    end if;
-  end process;
-
-  process (s_axi_aclk)
-  begin
-    if rising_edge(s_axi_aclk) then
-      if s_axi_areset = '1' then
-        axi_awaddr <= (others => '0');
-      else
-        if axi_awready = '0' and s_axi_awvalid = '1' and s_axi_wvalid = '1' then
-          axi_awaddr <= s_axi_awaddr;
-        end if;
-      end if;
-    end if;
-  end process;
-
-  process (s_axi_aclk)
-  begin
-    if rising_edge(s_axi_aclk) then
-      if s_axi_areset = '1' then
-        axi_wready <= '0';
-      else
-        if axi_wready = '0' and s_axi_wvalid = '1' and s_axi_awvalid = '1' then
-          axi_wready <= '1';
-        else
-          axi_wready <= '0';
-        end if;
-      end if;
-    end if;
-  end process;
-
-  slv_reg_wren <= axi_wready and s_axi_wvalid and axi_awready and s_axi_awvalid;
 '''
 
+signal_explicit_header = '''
+  -- Explicit signals
+'''
+
+signal_implicit_header = '''
+  -- Implicit signals
+'''
+
+signal_assign_prop = '  {name} <= {op_str}({reg}({msb} downto {lsb}));'
+signal_assign = '  {name} <= {reg}({msb} downto {lsb});'
+
 write_addr_decode_header = '''
+
   -- Write Address Decoder
   process(axi_awaddr or slv_reg_wren) begin
 '''
@@ -183,7 +141,7 @@ write_comment = '''
   -- Field writes
 '''
 
-reset_value = '"{value:0{bits}b}"'
+bin_num = '"{value:0{bits}b}"'
 
 axi_write_reset_sync = '''\
   -- {field_name}
@@ -238,7 +196,7 @@ axi_write_field_sw = '''if {reg}_axi_we = '1' then
 axi_write_field_hw_pre = '''      else
   '''
 
-axi_write_field_hw = '      {reg}({msb} downto {lsb}) <= {field}_i;'
+axi_write_field_hw = '      {reg}({msb} downto {lsb}) <= {value};'
 
 axi_write_field_hw_post = ''
 
@@ -253,39 +211,62 @@ axi_write_field_footer = '''
 
 '''
 
-# axi_write_header = '''
-#   process (s_axi_aclk)
-#     variable loc_addr : std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
-#   begin
-#     if rising_edge(s_axi_aclk) then
-#       if s_axi_areset = '1' then'''
-# axi_write_reset_reg = '\n'+'  '*4+'{name}({msb} downto {lsb}) <= (others => \'0\');'
-# axi_write_else_header = '''
-#       else
-#         loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
-#         if slv_reg_wren = '1' then'''
-# axi_write_assign = '''
-#           if loc_addr = b"{val}" then
-#             for i in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
-#               if s_axi_wstrb(i) = '1' then
-#                 {name}(i*8+7 downto i*8) <= s_axi_wdata(i*8+7 downto i*8);
-#               end if;
-#             end loop;'''
-# axi_write_assign_else = '\n          else'
-# axi_write_assign_end = '\n          end if;'
-# axi_write_else = '\n        else'
-# axi_sclr_part1 = ''
-# axi_sclr_part2 = ' & '
-# axi_sclr_part3 = '({} downto {})'
-# axi_sclr_part4 = '"{val}"'
-# axi_sclr_part5 = ';'
-# axi_write_footer = '''
-#         end if;
-#       end if;
-#     end if;
-#   end process;
-# '''
 axi_logic2 = '''
+  -- I/O Connections assignments
+  s_axi_awready <= axi_awready;
+  s_axi_wready  <= axi_wready;
+  s_axi_bresp   <= axi_bresp;
+  s_axi_bvalid  <= axi_bvalid;
+  s_axi_arready <= axi_arready;
+  s_axi_rdata   <= axi_rdata;
+  s_axi_rresp   <= axi_rresp;
+  s_axi_rvalid  <= axi_rvalid;
+
+  process (s_axi_aclk)
+  begin
+    if rising_edge(s_axi_aclk) then
+      if s_axi_areset = '1' then
+        axi_awready <= '0';
+      else
+        if axi_awready = '0' and s_axi_awvalid = '1' and s_axi_wvalid = '1' then
+          axi_awready <= '1';
+        else
+          axi_awready <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
+
+  process (s_axi_aclk)
+  begin
+    if rising_edge(s_axi_aclk) then
+      if s_axi_areset = '1' then
+        axi_awaddr <= (others => '0');
+      else
+        if axi_awready = '0' and s_axi_awvalid = '1' and s_axi_wvalid = '1' then
+          axi_awaddr <= s_axi_awaddr;
+        end if;
+      end if;
+    end if;
+  end process;
+
+  process (s_axi_aclk)
+  begin
+    if rising_edge(s_axi_aclk) then
+      if s_axi_areset = '1' then
+        axi_wready <= '0';
+      else
+        if axi_wready = '0' and s_axi_wvalid = '1' and s_axi_awvalid = '1' then
+          axi_wready <= '1';
+        else
+          axi_wready <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
+
+  slv_reg_wren <= axi_wready and s_axi_wvalid and axi_awready and s_axi_awvalid;
+
   -- Write Response
   process (s_axi_aclk)
   begin
@@ -341,6 +322,7 @@ axi_logic2 = '''
 
   slv_reg_rden <= axi_arready and s_axi_arvalid and (not axi_rvalid);
 '''
+
 reg_data_out_header = '''
   process ({sens}axi_araddr, s_axi_areset, slv_reg_rden)
     variable loc_addr : std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
@@ -350,9 +332,15 @@ reg_data_out_header = '''
     else
       loc_addr := axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);
       case loc_addr is'''
+
+concat_pre = ''
+concat = ' & '
+bit_select = '({msb} downto {lsb})'
+concat_post = ''
+
 reg_data_out_when = '''
         when b"{num_bin}" =>
-          reg_data_out <= {name};'''
+          reg_data_out <= {value};'''
 reg_data_out_footer_axi_logic = '''
         when others =>
           reg_data_out <= (others => '0');
@@ -373,9 +361,11 @@ reg_data_out_footer_axi_logic = '''
     end if;
   end process;
 '''
+
 ctrl_sig_assgns_header = '\n  -- Assign registers to control signals\n'
 ctrl_sig_assgns = '  {} <= {}({} downto {});\n'
 ctrl_sig_assgns_1bit = '  {} <= {}({});\n'
+
 sts_sig_assgns_header = '''
   -- Assign status signals to registers
   process(s_axi_aclk)
@@ -383,12 +373,16 @@ sts_sig_assgns_header = '''
   begin
     if rising_edge(s_axi_aclk) then
       if s_axi_areset = '1' then'''
+
 sts_sig_assgns_reset = '\n        {} <= (others => \'0\');'
+
 sts_sig_assgns_reset_else = '''
       else
         loc_addr := axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB);'''
+
 sts_sig_assgns_no_clr = '\n        {reg_name}({msb} downto {lsb}) <= {signal};'
 sts_sig_assgns_no_clr_1bit = '\n        {reg_name}({msb}) <= {signal};'
+
 sts_sig_assgns_with_clr = '''
         if {signal_valid} = '1' then
           {reg_name}({msb} downto {lsb}) <= {signal};

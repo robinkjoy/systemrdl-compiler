@@ -146,21 +146,25 @@ class Listener(SystemRDLListener):
                 return self.get_definition(Component.Enum, ctx.getText())
             else:
                 inst, prop = self.extract_instance_ref_rhs(ctx.getChild(0))
+                # fixme add checks on inst and prop
                 if inst.get_type() == 'Signal':
-                    if lprop in ['anded', 'ored', 'xored', 'swmod', 'swacc', 'overflow', 'underflow']:
+                    if lprop in Component.Field.OUTPUT_SIG_PROPS:
                         if inst.output:
                             log.error(f'signal {inst.inst_id} already driven', ctx.start.line)
                         inst.output = True
                     else:
                         inst.input = True
                     return inst
-                if prop is not None:
-                    sig_inst = Component.Signal(None, inst.inst_id + '_' + prop, None, [], (inst, prop))
+                elif prop is not None:
+                    sig_inst = Component.Signal(None, inst.inst_id + '_' + prop, None, [], ctx.start.line)
+                    sig_inst.int_ref = (inst, prop)
+                    log.debug(f'{sig_inst} {sig_inst.int_ref}')
                     setattr(sig_inst, 'signalwidth', 1)
                     self.internal_signals.append(sig_inst)
                     return sig_inst
                 elif inst.get_type() == 'Field':
-                    sig_inst = Component.Signal(None, inst.inst_id + '_' + prop, None, [], (inst, None))
+                    sig_inst = Component.Signal(None, inst.inst_id, None, [], ctx.start.line)
+                    sig_inst.int_ref = (inst, None)
                     setattr(sig_inst, 'signalwidth', inst.fieldwidth)
                     self.internal_signals.append(sig_inst)
                     return sig_inst
@@ -423,6 +427,7 @@ class Listener(SystemRDLListener):
                     log.error('array indices should be unsizedNumeric', ctx.start.line)
                 inst = comp if anon else comp.customcopy()
                 inst.position = (left, right)
+                inst.set_property('fieldwidth', abs(left-right)+1, ctx.start.line, [], False)
             # array declaration
             else:
                 size = extract_num(indctx(1).getText(), indctx(1).start.line)

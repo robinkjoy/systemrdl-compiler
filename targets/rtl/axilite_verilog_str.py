@@ -77,8 +77,118 @@ reg_signal = '  reg [{width}:0] {name};\n'
 reg_signal_1bit = '  reg {name};\n'
 
 write_addr_decode_comment = '\n  // Write Address Decode Signals\n'
+internal_signals_comment = '\n  // Internal Signals\n'
 
-begin_io_assgns_axi_logic = '''
+begin = '''
+'''
+
+signal_explicit_header = '''
+  // Explicit signals
+'''
+
+signal_implicit_header = '''
+  // Implicit signals
+'''
+
+signal_assign_prop = '  assign {name} = {op}{reg}[{msb}:{lsb}];'
+signal_assign = '  assign {name} = {reg}[{msb}:{lsb}];'
+
+write_addr_decode_header = '''
+
+  // Write Address Decoder
+  always@(axi_awaddr or slv_reg_wren) begin
+'''
+
+write_addr_decode_default = '''\
+    {name}_axi_we <= 1b'0;
+'''
+
+write_addr_decode_case = '''\
+    case(axi_awaddr)
+'''
+
+write_addr_decode = '''\
+      {bits}'b{addr:0{bits}b} : {name}_axi_we <= slv_reg_wren;
+'''
+
+write_addr_decode_footer = '''\
+    endcase
+  end
+'''
+
+write_comment = '''
+  // Field writes
+'''
+
+bin_num = '{bits}\'b{value:0{bits}b}'
+
+axi_write_reset_sync = '''\
+  // {field_name}
+  always@(posedge clk) begin
+    if ({rst} == 1'b{active}) begin
+      {reg_name}[{msb}:{lsb}] <= {value};
+    end else begin
+      '''
+
+axi_write_reset_async = '''\
+  // {field_name}
+  always@(posedge clk or {active_edge}edge {rst}) begin
+    if ({rst} == 1'b{active}) begin
+      {reg_name}[{msb}:{lsb}] <= {value};
+    end else begin
+      '''
+
+axi_write_field_else = ' else '
+
+axi_write_field_hw_we = '''\
+if ({ctrl} == 1'b{active}) begin
+        {reg}[{msb}:{lsb}] <= {field};
+      end'''
+
+axi_write_field_hw_we_mask = '''\
+if ({ctrl} == 1'b{active}) begin
+        for (i=0; i<{size}; i=i+1) begin
+          if ({mask}[i] == 1'b{mask_active}) begin
+            {reg}[{lsb}+i] <= {field};
+          end
+        end
+      end'''
+
+axi_write_field_hw_set = '''\
+if ({ctrl} == 1'b{active}) begin
+        {reg}[{msb}:{lsb}] <= {size}'b{field};
+      end'''
+
+axi_write_field_hw_set_mask = '''\
+if ({ctrl} == 1'b{active}) begin
+        for (i=0; i<{size}; i=i+1) begin
+          if ({mask}[i] == 1'b{mask_active}) begin
+            {reg}[{lsb}+i] <= 1'b{field};
+          end
+        end
+      end'''
+
+axi_write_field_sw = '''if ({reg}_axi_we == 1'b1) begin
+        {reg}[{msb}:{lsb}] <= s_axi_wdata[{msb}:{lsb}];
+      end'''
+
+axi_write_field_hw_pre = '''      begin
+  '''
+axi_write_field_hw = '      {reg}[{msb}:{lsb}] <= {value};'
+axi_write_field_hw_post = '      end'
+
+axi_write_field_hw_clr = '''begin
+        {reg}[{msb}:{lsb}] <= {size}'b{value};
+      end'''
+
+axi_write_field_footer = '''
+      end
+    end
+  end
+
+'''
+
+axi_logic2 = '''
 
   // I/O Connections assignments
   assign s_axi_awready  = axi_awready;
@@ -144,135 +254,6 @@ begin_io_assgns_axi_logic = '''
   end       
 
   assign slv_reg_wren = axi_wready && s_axi_wvalid && axi_awready && s_axi_awvalid;
-'''
-
-write_addr_decode_header = '''
-  // Write Address Decoder
-  always@(axi_awaddr or slv_reg_wren) begin
-'''
-
-write_addr_decode_default = '''\
-    {name}_axi_we <= 1b'0;
-'''
-
-write_addr_decode_case = '''\
-    case(axi_awaddr)
-'''
-
-write_addr_decode = '''\
-      {bits}'b{addr:0{bits}b} : {name}_axi_we <= slv_reg_wren;
-'''
-
-write_addr_decode_footer = '''\
-    endcase
-  end
-'''
-
-write_comment = '''
-  // Field writes
-'''
-
-reset_value = '{bits}\'b{value:0{bits}b}'
-
-axi_write_reset_sync = '''\
-  // {field_name}
-  always@(posedge clk) begin
-    if ({rst} == 1'b{active}) begin
-      {reg_name}[{msb}:{lsb}] <= {value};
-    end else begin
-      '''
-
-axi_write_reset_async = '''\
-  // {field_name}
-  always@(posedge clk or {active_edge}edge {rst}) begin
-    if ({rst} == 1'b{active}) begin
-      {reg_name}[{msb}:{lsb}] <= {value};
-    end else begin
-      '''
-
-axi_write_field_else = ' else '
-
-axi_write_field_hw_we = '''\
-if ({ctrl} == 1'b{active}) begin
-        {reg}[{msb}:{lsb}] <= {field};
-      end'''
-
-axi_write_field_hw_we_mask = '''\
-if ({ctrl} == 1'b{active}) begin
-        for (i=0; i<{size}; i=i+1) begin
-          if ({mask}[i] == 1'b{mask_active}) begin
-            {reg}[{lsb}+i] <= {field};
-          end
-        end
-      end'''
-
-axi_write_field_hw_set = '''\
-if ({ctrl} == 1'b{active}) begin
-        {reg}[{msb}:{lsb}] <= {size}'b{field};
-      end'''
-
-axi_write_field_hw_set_mask = '''\
-if ({ctrl} == 1'b{active}) begin
-        for (i=0; i<{size}; i=i+1) begin
-          if ({mask}[i] == 1'b{mask_active}) begin
-            {reg}[{lsb}+i] <= 1'b{field};
-          end
-        end
-      end'''
-
-axi_write_field_sw = '''if ({reg}_axi_we == 1'b1) begin
-        {reg}[{msb}:{lsb}] <= s_axi_wdata[{msb}:{lsb}];
-      end'''
-
-axi_write_field_hw_pre = '''      begin
-  '''
-axi_write_field_hw = '      {reg}[{msb}:{lsb}] <= {field}_i;'
-axi_write_field_hw_post = '      end'
-
-axi_write_field_hw_clr = '''begin
-        {reg}[{msb}:{lsb}] <= {size}'b{value};
-      end'''
-
-axi_write_field_footer = '''
-      end
-    end
-  end
-
-'''
-
-# axi_write_header = '''
-#   always @( posedge s_axi_aclk )
-#   begin : axi_write_proc
-#     reg [OPT_MEM_ADDR_BITS:0] loc_addr;'''
-# axi_write_reset_field = '''
-#     if ( {rst} == 1'b1 ) begin
-#         {name}[{msb}:{lsb}] <= 0;
-#     end'''
-# axi_write_else_header = '''
-#     else begin
-#       loc_addr = axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB];
-#       if (slv_reg_wren) begin'''
-# axi_write_assign = '''
-#         if (loc_addr == {len}'b{val}) begin
-#           for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8)-1; byte_index = byte_index+1 ) begin
-#             if ( s_axi_wstrb[byte_index] == 1 ) begin
-#               {name}[(byte_index*8) +: 8] <= s_axi_wdata[(byte_index*8) +: 8];
-#             end
-#           end'''
-# axi_write_assign_else = '\n        end else begin'
-# axi_write_assign_end = '\n        end'
-# axi_write_else = '\n      end else begin'
-# axi_sclr_part1 = '{'
-# axi_sclr_part2 = ', '
-# axi_sclr_part3 = '[{}:{}]'
-# axi_sclr_part4 = '{size}\'b{val}'
-# axi_sclr_part5 = '};'
-# axi_write_footer = '''
-#       end
-#     end
-#   end
-# '''
-axi_logic2 = '''
   // Write Response
   always @( posedge s_axi_aclk )
   begin
@@ -342,6 +323,7 @@ axi_logic2 = '''
 
   assign slv_reg_rden = axi_arready & s_axi_arvalid & ~axi_rvalid;
 '''
+
 reg_data_out_header = '''
   always @(*)
   begin
@@ -352,8 +334,15 @@ reg_data_out_header = '''
     else
       begin    
         case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )'''
+
+concat_pre = '{'
+concat = ', '
+bit_select = '[{msb}:{lsb}]'
+concat_post = '}'
+
 reg_data_out_when = '''
-          {size}'b{num_bin}   : reg_data_out <= {name};'''
+          {size}'b{num_bin}   : reg_data_out <= {value};'''
+
 reg_data_out_footer_axi_logic = '''
           default : reg_data_out <= 0;
         endcase
@@ -375,15 +364,18 @@ reg_data_out_footer_axi_logic = '''
       end
   end
 '''
+
 ctrl_sig_assgns_header = '\n  // Assign registers to control signals\n'
 ctrl_sig_assgns = '  assign {} = s{}[{}:{}];\n'
 ctrl_sig_assgns_1bit = '  assign {} = {}[{}];\n'
+
 sts_sig_assgns_header = '''
   // Assign status signals to registers
   always@(posedge s_axi_aclk)
   begin : stat_to_reg_proc
     reg [OPT_MEM_ADDR_BITS:0] loc_addr;
     if (s_axi_areset == 1'b1) begin'''
+
 sts_sig_assgns_reset = '\n      {} <= 0;'
 sts_sig_assgns_reset_else = '''
     end else begin

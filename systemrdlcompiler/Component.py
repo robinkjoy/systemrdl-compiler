@@ -490,7 +490,7 @@ class Field(Component):
         if prop == 'fieldwidth' and self.fieldwidth not in (None, value):
             log.error('field instantiation width does not match explicitly defined field width.', line)
         if prop in ['reset', 'next']:
-            if value == self:
+            if value is self:
                 log.error(f'{prop} cannot be self-referencing', line)
         if prop == 'reset' and self.fieldwidth is not None and isinstance(value, tuple):
             if value[0] != self.fieldwidth:

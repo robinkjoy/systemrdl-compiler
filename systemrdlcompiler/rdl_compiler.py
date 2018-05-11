@@ -32,7 +32,7 @@ def main():
     args = aparser.parse_args()
 
     # setup logger
-    logger.setup_logging(log_levels[args.log_level], args.debug)
+    logger.setup_logging(log_levels[args.log_level], args.debug, None)
     log = logging.getLogger()
 
     # preprocessing
@@ -49,9 +49,9 @@ def main():
 
     # parsing
     log.info('Start parsing..')
-    inputfile = antlr4.InputStream(data)
+    inputstream = antlr4.InputStream(data)
 
-    lexer = SystemRDLLexer(inputfile)
+    lexer = SystemRDLLexer(inputstream)
     lexer.removeErrorListeners()
     lexer._listeners = [CustomErrorListener()]
 

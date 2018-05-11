@@ -16,8 +16,6 @@ def extract_num(string, line):
         return int(string, 16)
     # sized Number
     string = re.split('\'([bodh])', string, 1, flags=re.IGNORECASE)
-    if string[2][0] == '_':
-        log.error('first position of value should not be \'_\'.', line)
     base = {'b': 2, 'd': 10, 'o': 8, 'h': 16}[string[1].lower()]
     size = int(string[0])
     number = int(string[2].translate({ord('_'): None}), base)
@@ -108,7 +106,7 @@ class Listener(SystemRDLListener):
 
     def add_default(self, default, line):
         if default[0] in self.defaults[-1]:
-            log.error('defaults can be assigned only once per scope.', line)
+            log.error('defaults can be assigned only once per scope', line)
         self.defaults[-1].update({default[0]: default[1]})
 
     @staticmethod
@@ -158,7 +156,6 @@ class Listener(SystemRDLListener):
                 elif prop is not None:
                     sig_inst = Component.Signal(None, inst.inst_id + '_' + prop, None, [], ctx.start.line)
                     sig_inst.int_ref = (inst, prop)
-                    log.debug(f'{sig_inst} {sig_inst.int_ref}')
                     setattr(sig_inst, 'signalwidth', 1)
                     self.internal_signals.append(sig_inst)
                     return sig_inst
@@ -169,12 +166,12 @@ class Listener(SystemRDLListener):
                     self.internal_signals.append(sig_inst)
                     return sig_inst
         elif ctx.concat() is not None:
-            log.error('concat not implemented.', ctx.start.line)
+            log.error('concat not implemented', ctx.start.line)
 
     @staticmethod
     def extract_enum_body(ctx, enum):
         if len(ctx.enum_entry()) == 0:
-            log.error('no entries in enum.', ctx.start.line)
+            log.error('no entries in enum', ctx.start.line)
         for entryctx in ctx.children:
             if not isinstance(entryctx, SystemRDLParser.Enum_entryContext):
                 continue
@@ -184,11 +181,11 @@ class Listener(SystemRDLListener):
             if not isinstance(value, tuple):
                 log.error('enum entry value should be sizedNumeric', entryctx.start.line)
             if any([x for x in enum.comps if x.def_id == name]):
-                log.error(f'{name} already defined in enum.', entryctx.start.line)
+                log.error(f'{name} already defined in enum', entryctx.start.line)
             if len(enum.comps) != 0 and value[0] != enum.comps[0].value[0]:
-                log.error('size does not match others.', entryctx.start.line)
+                log.error('size does not match others', entryctx.start.line)
             if any([x for x in enum.comps if x.value == value]):
-                log.error(f'{entryctx.getChild(2).getText()} already defined in enum.', entryctx.start.line)
+                log.error(f'{entryctx.getChild(2).getText()} already defined in enum', entryctx.start.line)
             entry = Component.EnumEntry(name, value)
             for propctx in entryctx.children:
                 if not isinstance(propctx, SystemRDLParser.Enum_property_assignContext):
@@ -208,19 +205,20 @@ class Listener(SystemRDLListener):
                 # if array index not specified, applies to all. But array index should be
                 # specified to access a child component
                 if isinstance(parent, list):
-                    log.error(f'array index for {parent[0].inst_id} not specified.', line)
+                    log.error(f'array index for {parent[0].inst_id} not specified', line)
+                parent_comps = self.internal_signals if parent is None else parent.comps + parent.signals
                 inst_id = elemctx.getChild(0).getText()
-                inst = next((x for x in parent.comps + parent.signals
+                inst = next((x for x in parent_comps
                              if is_matching_instance(x, inst_id)), None)
                 if inst is None:
                     log.error(f'{inst_id} not found', elemctx.start.line)
                 if elemctx.num() is not None:
                     if not isinstance(inst, list):
-                        log.error('{inst.inst_id} is not an array', line)
+                        log.error(f'{inst.inst_id} is not an array', line)
                     index = extract_num(elemctx.getChild(2).getText(),
                                         elemctx.getChild(2).start.line)
                     if isinstance(index, tuple):
-                        log.error('array index should be numeric.', line)
+                        log.error('array index should be numeric', line)
                     if index >= len(inst):
                         log.error('array index out of range', elemctx.start.line)
                     inst = inst[index]
@@ -235,35 +233,36 @@ class Listener(SystemRDLListener):
         parent = None
         line = ctx.start.line
         for elemctx in ctx.children:
-            if parent is None:
-                inst_id = elemctx.getChild(0).getText()
-                for insts in reversed(self.scoped_insts):
-                    inst = next((x for x in insts
+            if isinstance(elemctx, SystemRDLParser.Instance_ref_elemContext):
+                if parent is None:
+                    inst_id = elemctx.getChild(0).getText()
+                    for insts in reversed(self.scoped_insts):
+                        inst = next((x for x in insts
+                                     if is_matching_instance(x, inst_id)), None)
+                        if inst:
+                            break
+                    if inst is None:
+                        log.error(f'{inst_id} not found', line)
+                else:
+                    inst_id = elemctx.getChild(0).getText()
+                    inst = next((x for x in parent.comps + parent.signals
                                  if is_matching_instance(x, inst_id)), None)
-                    if inst:
-                        break
-                if inst is None:
-                    log.error(f'{inst_id} not found', line)
-            elif isinstance(elemctx, SystemRDLParser.Instance_ref_elemContext):
-                inst_id = elemctx.getChild(0).getText()
-                inst = next((x for x in parent.comps + parent.signals
-                             if is_matching_instance(x, inst_id)), None)
-                if inst is None:
-                    log.error(f'{inst_id} not found', line)
+                    if inst is None:
+                        log.error(f'{inst_id} not found', line)
                 if elemctx.num() is not None:
                     if not isinstance(inst, list):
-                        log.error('{inst.inst_id} is not an array', line)
+                        log.error(f'{inst.inst_id} is not an array', line)
                     index = extract_num(elemctx.getChild(2).getText(),
                                         elemctx.getChild(2).start.line)
                     if isinstance(index, tuple):
-                        log.error('array index should be numeric.', line)
+                        log.error('array index should be numeric', line)
                     if index >= len(inst):
                         log.error('array index out of range', line)
                     inst = inst[index]
+                if isinstance(inst, list):
+                    log.error(f'array index for {inst[0].inst_id} not specified', line)
             elif isinstance(elemctx, SystemRDLParser.S_propertyContext):
                 prop = elemctx.getChild(0).getText()
-            if isinstance(inst, list):
-                log.error(f'array index for {inst[0].inst_id} not specified.', line)
             parent = inst
         return inst, prop
 
@@ -343,7 +342,7 @@ class Listener(SystemRDLListener):
         if ctx.getChild(1).getText() == '{':
             # (5.1.4)
             if self.curr_comp is None and comp_type != 'signal':
-                log.error('{comp_type} should not be instantiated in root scope.', ctx.start.line)
+                log.error(f'{comp_type} should not be instantiated in root scope.', ctx.start.line)
             comp = self.COMPONENT_CLASS[comp_type](
                 None, None, self.curr_comp, self.defaults, ctx.start.line)
         # definition
@@ -377,7 +376,7 @@ class Listener(SystemRDLListener):
         if comp_type in comp_child:
             if not any([x for x in itercomps0(comp.comps)
                         if x.get_type() in comp_child[comp_type]]):
-                log.error('no child components in {comp_type}', ctx.start.line)
+                log.error(f'no child components in {comp_type}', ctx.start.line)
         # exit scope
         self.curr_comp = comp.parent
         self.pop_scope()
@@ -399,7 +398,7 @@ class Listener(SystemRDLListener):
                 0, SystemRDLParser.S_idContext).getText()
             comp = self.get_definition(Component.Component, comp_name)
             if comp is None:
-                log.error('component \'{comp_name}\' definition not found', ctx.start.line)
+                log.error(f'component \'{comp_name}\' definition not found', ctx.start.line)
             parent = self.curr_comp
         comp_type = comp.get_type()
 

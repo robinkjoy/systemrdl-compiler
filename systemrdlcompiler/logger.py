@@ -3,7 +3,7 @@ import sys
 
 
 class CustomFormatter(logging.Formatter):
-    def __init__(self, debug, line_info=None):
+    def __init__(self, debug, line_info):
         self.debug = debug
         self.line_info = line_info
 
@@ -36,12 +36,12 @@ class ErrorHandler(logging.Handler):
         sys.exit()
 
 
-def setup_logging(level, debug):
+def setup_logging(level, debug, line_info):
     log = logging.getLogger()
     log.setLevel(level)
     error_handler = ErrorHandler(level=logging.ERROR)
     nonerror_handler = NonErrorHandler(level=logging.DEBUG)
-    fmt = CustomFormatter(debug)
+    fmt = CustomFormatter(debug, line_info)
     error_handler.setFormatter(fmt)
     nonerror_handler.setFormatter(fmt)
     log.addHandler(error_handler)

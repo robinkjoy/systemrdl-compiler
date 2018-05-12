@@ -49,7 +49,7 @@ class Component:
         setattr(self, prop, value)
         exc = next((x for x in self.EXCLUSIVES if prop in x), None)
         if exc is not None and len([x for x in exc if true_or_assigned(getattr(self, x))]) > 1:
-            log.error('Properties {} should be exclusive in {} {}', self.line,
+            log.error('properties {} should be exclusive in {} {}', self.line,
                       ', '.join(exc), self.get_type(),
                       self.def_id if self.inst_id is None else self.inst_id)
 
@@ -117,9 +117,9 @@ class Component:
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         if prop in self.properties:
             if is_dynamic and prop in self.NON_DYNAMIC_PROPERTIES:
-                log.error(f'Property \'{prop}\' cannot be assigned dynamically.', line)
+                log.error(f'property {prop} cannot be assigned dynamically', line)
             if not self.check_type(prop, value, line):
-                log.error(f'Property \'{prop}\' expected {self.properties[prop]}.', line)
+                log.error(f'property {prop} expected {self.properties[prop]}', line)
         else:
             user_def_prop_type = {
                 'number': ['numeric', 'sizedNumeric'],
@@ -129,13 +129,13 @@ class Component:
             }
             user_def_prop = next((x for x in user_def_props if x.prop_id == prop), None)
             if user_def_prop is None:
-                log.error(f'Property \'{prop}\' not defined for {self.get_type()}.', line)
+                log.error(f'property {prop} not defined for {self.get_type()}', line)
             else:
                 self.properties[prop] = user_def_prop_type[user_def_prop.prop_type]
                 if value is None:
                     value = user_def_prop.prop_default
                 elif not self.check_type(prop, value, line):
-                    log.error(f'Property \'{prop}\' expected {self.properties[prop]}.', line)
+                    log.error(f'property {prop} expected {self.properties[prop]}', line)
         return value
 
     def customcopy(self):
@@ -292,7 +292,7 @@ class AddrMap(Component):
             return False
         # semantics (10.3.1)
         if prop == 'alignment' and not is_power_2(value):
-            log.error('Property \'alignment\' should be a power of two.', line)
+            log.error('Property alignment should be a power of two.', line)
         return True
 
     def set_property(self, prop, value, line, user_def_props, is_dynamic):

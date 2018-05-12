@@ -286,7 +286,7 @@ class Listener(SystemRDLListener):
                          if isinstance(x, Component.AddrMap)
                          and not x.instantiated]
         if not self.addrmaps:
-            log.error('No addressmaps found')
+            log.error('No addressmaps found', ctx.start.line)
 
     # Enter a parse tree produced by SystemRDLParser#property_body.
     def enterProperty_body(self, ctx):
@@ -299,9 +299,9 @@ class Listener(SystemRDLListener):
         prop_type = ctx.getChild(
             0, SystemRDLParser.Property_typeContext).getChild(2).getText()
         if not ctx.property_usage():
-            log.error('property usage not specified', ctx.start.line)
+            log.error('property component not specified', ctx.start.line)
         if len(ctx.property_usage()) > 1:
-            log.error('property usage reassigned', ctx.start.line)
+            log.error('property component reassigned', ctx.start.line)
         prop_usage = []
         prop_usage_ctx = ctx.getChild(0, SystemRDLParser.Property_usageContext)
         for childctx in prop_usage_ctx.getChildren():
@@ -318,18 +318,18 @@ class Listener(SystemRDLListener):
             line = prop_default_ctx.start.line
             if prop_default_ctx.string() is not None:
                 if prop_type != 'string':
-                    log.error('default does not match type.', line)
+                    log.error('default does not match type', line)
                 prop_default = prop_default_str
             elif prop_default_ctx.num() is not None:
                 if prop_type != 'number':
-                    log.error('default does not match type.', line)
+                    log.error('default does not match type', line)
                 prop_default = extract_num(
                     prop_default_str, prop_default_ctx.start.line)
                 if not isinstance(prop_default, int):
-                    log.error('default value cannot be sizedNumeric.', line)
+                    log.error('default value cannot be sizedNumeric', line)
             else:
                 if prop_type != 'boolean':
-                    log.error('default does not match type.', line)
+                    log.error('default does not match type', line)
                 prop_default = True if prop_default_str == 'true' else False
         self.user_def_props.append(
             Component.Property(prop_id, prop_type, prop_usage, prop_default))
@@ -342,7 +342,7 @@ class Listener(SystemRDLListener):
         if ctx.getChild(1).getText() == '{':
             # (5.1.4)
             if self.curr_comp is None and comp_type != 'signal':
-                log.error(f'{comp_type} should not be instantiated in root scope.', ctx.start.line)
+                log.error(f'{comp_type} should not be instantiated in root scope', ctx.start.line)
             comp = self.COMPONENT_CLASS[comp_type](
                 None, None, self.curr_comp, self.defaults, ctx.start.line)
         # definition
@@ -364,7 +364,7 @@ class Listener(SystemRDLListener):
     def exitComponent_def(self, ctx):
         if (ctx.getChild(1).getText() == '{'
                 and ctx.anonymous_component_inst_elems() is None):
-            log.error('definition name or instatiation name not specified.', ctx.start.line)
+            log.error('definition name or instatiation name not specified', ctx.start.line)
         # at least one child component instantiated
         comp_child = {
             'Register': ['Field'],
@@ -385,7 +385,7 @@ class Listener(SystemRDLListener):
     # SystemRDLParser#anonymous_component_inst_elems.
     def enterAnonymous_component_inst_elems(self, ctx):
         if self.curr_comp.def_id is not None:
-            log.error('both definition name and instantiation name specified.', ctx.start.line)
+            log.error('both definition name and instantiation name specified', ctx.start.line)
 
     # Exit a parse tree produced by SystemRDLParser#component_inst_elem.
     def exitComponent_inst_elem(self, ctx):
@@ -419,7 +419,7 @@ class Listener(SystemRDLListener):
             if ctx.getChild(1).getChild(2).getText() == ':':
                 # (5.1.2.a.3.ii)
                 if comp_type != 'Field':  # Signal too??
-                    log.error('array indices not allowed for {comp_type}', ctx.start.line)
+                    log.error(f'array indices not allowed for {comp_type}', ctx.start.line)
                 left = extract_num(indctx(1).getText(), indctx(1).start.line)
                 right = extract_num(indctx(3).getText(), indctx(3).start.line)
                 if not isinstance(left, int) or not isinstance(right, int):
@@ -465,6 +465,8 @@ class Listener(SystemRDLListener):
                     x.set_property(prop, value, ctx.start.line, [], None)
         # set field position
         if comp_type == 'Field':
+            if parent.get_type() != 'Register':
+                log.error('Field can be instantiated only inside Register', ctx.start.line)
             # if parent has no bit order, infer it
             if parent.bit_order is None:
                 if inst.position == (None, None) or inst.position[0] == inst.position[1]:
@@ -519,7 +521,7 @@ class Listener(SystemRDLListener):
                 if (ctx.property_assign_rhs() is None
                         or ctx.getChild(2).property_rvalue_constant() is None
                         or ctx.getChild(2).getChild(0).string() is None):
-                    log.error(f'{prop} expected string value.', ctx.start.line)
+                    log.error(f'{prop} expected string value', ctx.start.line)
                 value = ctx.getChild(2).getText()
             else:
                 def prop_class(prop):
@@ -530,13 +532,13 @@ class Listener(SystemRDLListener):
 
                 cls = prop_class(prop)
                 if cls is None:
-                    log.error(f'{prop} is not a builtin property.', ctx.start.line)
+                    log.error(f'{prop} is not a builtin property', ctx.start.line)
                 if ctx.property_assign_rhs() is None:
                     value = True
                 else:
                     value = self.extract_rhs_value(ctx.getChild(2), prop)
                 if not cls.check_type(prop, value, ctx.start.line):
-                    log.error(f'{prop} expected {cls.properties[prop]}.', ctx.start.line)
+                    log.error(f'{prop} expected {cls.properties[prop]}', ctx.start.line)
             self.add_default((prop, value), ctx.start.line)
         else:
             comp = self.curr_comp
@@ -562,7 +564,7 @@ class Listener(SystemRDLListener):
     def enterPost_property_assign(self, ctx):
         inst, prop = self.extract_instance_ref(ctx.getChild(0))
         if prop is None:
-            log.error('property is not specified.', ctx.start.line)
+            log.error('property is not specified', ctx.start.line)
         if ctx.property_assign_rhs() is None:
             value = self.get_implicit_value(
                 ctx.getChild(0).getChild(0, SystemRDLParser.S_propertyContext))

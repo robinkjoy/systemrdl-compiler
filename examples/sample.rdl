@@ -36,7 +36,6 @@ addrmap am1 {
     } data[2] @0x0 +=0x4;
   };
   rf rf1;
-  rf rf2;
   rf1.data->accesswidth = 32;
   rf1.data->user_prop1 = "hello";
   rf1.data[0].df2->name="data2";

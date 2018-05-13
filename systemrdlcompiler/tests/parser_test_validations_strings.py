@@ -11,6 +11,7 @@ test_strings = [
     ("default sw = r;default sw = rw;", "ERROR:test(1):defaults can be assigned only once per scope\n"),
     # extract_rhs_value
     ("signal {}s1; field ff{anded=s1;ored=s1;};", "ERROR:test(1):signal s1 already driven\n"),
+    ("field ff{reset={1'b1,1'b1};};", "ERROR:test(1):concat not implemented\n"),
     # extract_enum_body
     ("enum ee{};", "ERROR:test(1):no entries in enum\n"),
     ("enum ee{aa=1;};", "ERROR:test(1):enum entry value should be sizedNumeric\n"),
@@ -48,12 +49,14 @@ test_strings = [
     ("property fld_p {component = field; type = string; default = 1;};", "ERROR:test(1):default does not match type\n"),
     ("property fld_p {component = field; type = number; default = true;};",
      "ERROR:test(1):default does not match type\n"),
+    ("property pp{component=field; type=number; default=1'b1;};",
+     "ERROR:test(1):default value cannot be sizedNumeric\n"),
     ("property fld_p {component = field; type = boolean; default = \"true\";};",
      "ERROR:test(1):default does not match type\n"),
     # enterComponent_def
     ("field {}ff;", "ERROR:test(1):field should not be instantiated in root scope\n"),
     # exitComponent_def
-    ("addrmap am {reg {};};", "ERROR:test(1):definition name or instatiation name not specified\n"),
+    ("addrmap am {reg {};};", "ERROR:test(1):definition name or instantiation name not specified\n"),
     ("addrmap am {};", "ERROR:test(1):no child components in AddrMap\n"),
     # enterAnonymous_component_inst_elems
     ("addrmap am {}am;", "ERROR:test(1):both definition name and instantiation name specified\n"),
@@ -76,11 +79,40 @@ test_strings = [
     # enterPost_property_assign
     ("regfile rf{reg {field {}ff;}rr; rr.ff = 1;};", "ERROR:test(1):property is not specified\n"),
     # Component.py
+    # Component.set_property
     ("field ff{we; wel;};", "ERROR:test(1):properties we, wel should be exclusive in Field ff\n"),
+    # Component.validate_property
     ("reg rr{field {}ff; ff->fieldwidth = 32;};", "ERROR:test(1):property fieldwidth cannot be assigned dynamically\n"),
     ("field ff{sw=1;};", "ERROR:test(1):property sw expected accessType\n"),
     ("field ff{lsb0;};", "ERROR:test(1):property lsb0 not defined for Field\n"),
-    ("property p_fld{component=field; type=string;}; field ff{p_fld = 1;};", "ERROR:test(1):property p_fld expected string\n"),
+    ("property p_fld{component=field; type=string;}; field ff{p_fld = 1;};",
+     "ERROR:test(1):property p_fld expected string\n"),
+    # Component.add_comp
     ("reg rr{reg {}rr1;};", "ERROR:test(1):Register instance not allowed in Register\n"),
     ("reg rr{field {}ff; field {}ff;};", "ERROR:test(1):all instance names should be unique within a scope\n"),
+    # AddrMap.validate_property
+    ("addrmap am{alignment = 31;};", "ERROR:test(1):property alignment should be a power of two\n"),
+    # AddrMap.validate_addresses
+    ("field ff{};addrmap am{reg {ff ff1;}rr1; reg {ff ff1;}rr2@0x0;};",
+     "ERROR:test(1):address 0x0 of register rr2 already assigned\n"),
+    # RegFile.validate_property
+    ("regfile rf{alignment = 31;};", "ERROR:test(1):property alignment should be a power of two\n"),
+    # Register.validate_property
+    ("reg rr{regwidth=7;};", "ERROR:test(1):property regwidth should be a power of two and >= 8\n"),
+    # Field.check_type
+    ("field ff{reset=1;};", "ERROR:test(1):verilog style integer should be used for non-zero reset values\n"),
+    # Field.validate_property
+    ("reg rr{field {fieldwidth=1;}ff1[2];};",
+     "ERROR:test(1):field instantiation width does not match explicitly defined field width\n"),
+    ("reg rr{field {}ff; ff->reset = ff;};", "ERROR:test(1):reset cannot be self-referencing\n"),
+    ("signal{}ss[2];reg rr{field{}ff;ff->reset=ss;};",
+     "ERROR:test(1):size of reset value signal does not match field width\n"),
+    ("reg rr{field {}ff;ff->reset=2'h0;};", "ERROR:test(1):size of reset value does not match field width\n"),
+    ("reg rr{field {reset=2'h0;}ff;};", "ERROR:test(1):size of reset value does not match field width\n"),
+    ("signal{}ss[2];reg rr{field{reset=ss;}ff;};", "ERROR:test(1):size of reset value does not match field width\n"),
+    ("signal{}ss[2];reg rr{field{resetsignal=ss;}ff;};", "ERROR:test(1):width of resetsignal signal should be 1\n"),
+    ("field ff{sw=w;hw=w;};", "ERROR:test(1):invalid field access pair in Field\n"),
+    # Signal.validate_property
+    ("signal {signalwidth=2;}ss;",
+     "ERROR:test(1):signal instantiation width does not match explicitly defined signal width\n"),
 ]

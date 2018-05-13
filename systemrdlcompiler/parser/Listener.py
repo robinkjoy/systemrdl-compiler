@@ -364,7 +364,7 @@ class Listener(SystemRDLListener):
     def exitComponent_def(self, ctx):
         if (ctx.getChild(1).getText() == '{'
                 and ctx.anonymous_component_inst_elems() is None):
-            log.error('definition name or instatiation name not specified', ctx.start.line)
+            log.error('definition name or instantiation name not specified', ctx.start.line)
         # at least one child component instantiated
         comp_child = {
             'Register': ['Field'],
@@ -377,6 +377,9 @@ class Listener(SystemRDLListener):
             if not any([x for x in itercomps0(comp.comps)
                         if x.get_type() in comp_child[comp_type]]):
                 log.error(f'no child components in {comp_type}', ctx.start.line)
+        if comp_type == 'AddrMap':
+            comp.populate_addresses(0, comp.addressing)
+            comp.validate_addresses()
         # exit scope
         self.curr_comp = comp.parent
         self.pop_scope()

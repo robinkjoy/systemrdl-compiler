@@ -214,7 +214,7 @@ class Component:
             return ceil(addr / align) * align
 
         self.addr = start_addr
-        if self.at_addr:
+        if self.at_addr is not None:
             self.addr = self.at_addr
         ialign = getattr(self, 'alignment', None) or align
         if ialign:
@@ -286,21 +286,18 @@ class AddrMap(Component):
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.instantiated = False
         self.bit_order = None
+        self.last_addr = None
 
-    def check_type(self, prop, value, line):
-        if not super().check_type(prop, value, line):
-            return False
+    def validate_property(self, prop, value, line, user_def_props, is_dynamic):
+        value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
         # semantics (10.3.1)
         if prop == 'alignment' and not is_power_2(value):
-            log.error('Property alignment should be a power of two.', line)
-        return True
+            log.error('property alignment should be a power of two', line)
+        return value
 
     def set_property(self, prop, value, line, user_def_props, is_dynamic):
         super().set_property(prop, value, line, user_def_props, is_dynamic)
         if prop in ('msb0', 'lsb0') and value:
-            if self.bit_order is not None and self.bit_order != prop:
-                log.error('Properties msb0, lsb0 should be exclusive in AddrMap {}', line,
-                          self.def_id if self.inst_id is None else self.inst_id)
             self.bit_order = prop
 
     def get_regs_iter(self):
@@ -325,10 +322,11 @@ class AddrMap(Component):
         filled_addr = set()
         for reg in self.get_regs_iter():
             reg_addr = set(range(reg.addr, reg.addr + reg.regwidth // 8))
+            log.debug(f'reg {reg.get_full_name()} @{reg.addr}')
             if filled_addr & reg_addr:
-                log.error(f'Address 0x{reg.addr:x} of register {reg.inst_id} already assigned', reg.line)
+                log.error(f'address 0x{reg.addr:x} of register {reg.inst_id} already assigned', reg.line)
             filled_addr |= reg_addr
-        return max(filled_addr)
+        self.last_addr = max(filled_addr)
 
 
 class RegFile(Component):
@@ -347,13 +345,12 @@ class RegFile(Component):
         super().__init__(def_id, inst_id, parent, defaults, line)
         self.bit_order = None
 
-    def check_type(self, prop, value, line):
-        if not super().check_type(prop, value, line):
-            return False
+    def validate_property(self, prop, value, line, user_def_props, is_dynamic):
+        value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
         # semantics (9.1.1)
         if prop == 'alignment' and not is_power_2(value):
-            log.error('Property \'alignment\' should be a power of two.', line)
-        return True
+            log.error('property alignment should be a power of two', line)
+        return value
 
     def pprint(self, level=0):
         super().pprint(level)
@@ -381,13 +378,12 @@ class Register(Component):
         self.bit_order = None
         self.filled_bits = set()
 
-    def check_type(self, prop, value, line):
-        if not super().check_type(prop, value, line):
-            return False
+    def validate_property(self, prop, value, line, user_def_props, is_dynamic):
+        value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
         # semantics (8.5.1)
         if prop in ('regwidth', 'accesswidth') and (not is_power_2(value) or value < 8):
-            log.error('Property \'{}\' should be a power of two and >= 8.', line, prop)
-        return True
+            log.error(f'property {prop} should be a power of two and >= 8', line)
+        return value
 
     def pprint(self, level=0):
         super().pprint(level)
@@ -482,21 +478,26 @@ class Field(Component):
         if not super().check_type(prop, value, line):
             return False
         if prop == 'reset' and isinstance(value, int) and value != 0:
-            log.error('Verilog style integer should be used for non-zero reset values.', line)  # (7.5.1.a)
+            log.error('verilog style integer should be used for non-zero reset values', line)  # (7.5.1.a)
         return True
 
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
         if prop == 'fieldwidth' and self.fieldwidth not in (None, value):
-            log.error('field instantiation width does not match explicitly defined field width.', line)
-        if prop in ['reset', 'next']:
-            if value is self:
+            log.error('field instantiation width does not match explicitly defined field width', line)
+        if prop in ['reset', 'next'] and isinstance(value, Signal) and value.int_ref is not None:
+            if value.int_ref[1] is None and value.int_ref[0] is self:
                 log.error(f'{prop} cannot be self-referencing', line)
+        # if reset value is sizedNumeric
         if prop == 'reset' and self.fieldwidth is not None and isinstance(value, tuple):
             if value[0] != self.fieldwidth:
                 log.error(f'size of {prop} value does not match field width', line)
             value = value[1]
+        if (isinstance(value, Signal) and self.fieldwidth is not None and
+                prop in self.FIELDWIDTH_SIG_PROPS and value.signalwidth != self.fieldwidth):
+            log.error(f'size of {prop} value signal does not match field width', line)
         if prop == 'fieldwidth':
+            # if reset value is sizedNumeric
             if isinstance(self.reset, tuple):
                 if self.reset[0] != value:
                     log.error(f'size of reset value does not match field width', line)
@@ -504,21 +505,21 @@ class Field(Component):
             for fwprop in self.FIELDWIDTH_SIG_PROPS:
                 fwpropval = getattr(self, fwprop, None)
                 if isinstance(fwpropval, Signal) and fwpropval.signalwidth != value:
-                    log.error(f'size of {fwprop} value field does not match field width', line)
+                    log.error(f'size of {fwprop} value does not match field width', line)
         if isinstance(value, Signal) and prop in self.ONEBIT_SIG_PROPS and value.signalwidth != 1:
             log.error(f'width of {prop} signal should be 1', line)
-        if (isinstance(value, Signal) and self.fieldwidth is not None and
-                prop in self.FIELDWIDTH_SIG_PROPS and value.signalwidth != self.fieldwidth):
-            log.error(f'size of {prop} value signal does not match field width', line)
+        if prop in ('sw', 'hw'):
+            if prop == 'sw':
+                sw = value
+                hw = self.hw
+            else:
+                sw = self.sw
+                hw = value
+            invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
+            if (sw, hw) in invalid_accesses:  # (Table 9)
+                log.error('invalid field access pair in Field', self.line, self.inst_id)
 
         return value
-
-    def set_property(self, prop, value, line, user_def_props, is_dynamic):
-        super().set_property(prop, value, line, user_def_props, is_dynamic)
-        invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
-        if prop in ('sw', 'hw') and (self.sw, self.hw) in invalid_accesses:  # (Table 9)
-            log.error('invalid field access pair in Field {}', self.line,
-                      self.inst_id)
 
     def pprint(self, level=0):
         super().pprint(level)
@@ -547,7 +548,7 @@ class Signal(Component):
     def validate_property(self, prop, value, line, user_def_props, is_dynamic):
         value = super().validate_property(prop, value, line, user_def_props, is_dynamic)
         if prop == 'signalwidth' and self.signalwidth not in (None, value):
-            log.error('signal instantiation width does not match explicitly defined signal width.', line)
+            log.error('signal instantiation width does not match explicitly defined signal width', line)
         return value
 
 

@@ -65,13 +65,11 @@ def main():
     walker.walk(listener, tree)
     log.info('Parsing done.')
     for am in listener.addrmaps:
-        am.populate_addresses(0, 'regalign')
-        last_addr = am.validate_addresses()
-        log.info(f'{am.def_id} assigned address space till 0x{last_addr:x}')
+        log.info(f'{am.def_id} assigned address space till 0x{am.last_addr:x}')
         if args.v_print:
             am.pprint()
         log.info(f'Generating RTL for AddrMap {am.def_id}..')
-        rtl_gen.generate_rtl(args.lang, am, last_addr, listener.signals, listener.internal_signals)
+        rtl_gen.generate_rtl(args.lang, am, listener.signals, listener.internal_signals)
 
     log.info('Done.')
     logging.shutdown()

@@ -325,7 +325,7 @@ def write_sts_sig_assgns(f, regs):
 
 
 # main function
-def generate_rtl(lang, addrmap, last_addr, root_sigs, internal_sigs):
+def generate_rtl(lang, addrmap, root_sigs, internal_sigs):
     import_strings(lang)
     regs = list(addrmap.get_regs_iter())
     file_ext = 'v' if lang == 'verilog' else 'vhd'
@@ -338,7 +338,7 @@ def generate_rtl(lang, addrmap, last_addr, root_sigs, internal_sigs):
     write_ports_fields(f, regs)
     write_ports_signals(f, signals)
     f.write(rtl_str.axi_ports_end)
-    mem_addr_bits = ceil(log2(max(last_addr, 31))) - 2  # axi width = 32, access = 32 fixme
+    mem_addr_bits = ceil(log2(max(addrmap.last_addr, 31))) - 2  # axi width = 32, access = 32 fixme
     f.write(rtl_str.constants.format(mem_addr_bits - 1))
     f.write(rtl_str.axi_internal_signals)
     write_reg_signals(f, regs)

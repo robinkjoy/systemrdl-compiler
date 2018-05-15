@@ -15,7 +15,8 @@ test_strings = [
     # extract_enum_body
     ("enum ee{};", "ERROR:test(1):no entries in enum\n"),
     ("enum ee{aa=1;};", "ERROR:test(1):enum entry value should be sizedNumeric\n"),
-    ("enum ee{aa=1'b0;aa=1'b1;};", "ERROR:test(1):aa already defined in enum\n"),
+    ("enum ee{aa;aa;};", "ERROR:test(1):aa already defined in enum\n"),
+    ("enum ee{aa=1'b1; bb;};", "ERROR:test(1):auto-assigned value 2 for bb do not fit in existing value size\n"),
     ("enum ee{aa=2'h0;ab=1'b1;};", "ERROR:test(1):size does not match others\n"),
     ("enum ee{aa=1'h0;ab=1'b0;};", "ERROR:test(1):1'b0 already defined in enum\n"),
     # extract_instance_ref
@@ -110,8 +111,12 @@ test_strings = [
     ("reg rr{field {}ff;ff->reset=2'h0;};", "ERROR:test(1):size of reset value does not match field width\n"),
     ("reg rr{field {reset=2'h0;}ff;};", "ERROR:test(1):size of reset value does not match field width\n"),
     ("signal{}ss[2];reg rr{field{reset=ss;}ff;};", "ERROR:test(1):size of reset value does not match field width\n"),
+    ("enum ee{aa=2'd0;}; reg rr{field {encode=ee;}ff;};",
+     "ERROR:test(1):enumeration values do not fit within field width\n"),
     ("signal{}ss[2];reg rr{field{resetsignal=ss;}ff;};", "ERROR:test(1):width of resetsignal signal should be 1\n"),
     ("field ff{sw=w;hw=w;};", "ERROR:test(1):invalid field access pair in Field\n"),
+    ("enum ee{aa=2'd0;}; field ff{fieldwidth=1;encode=ee;};",
+     "ERROR:test(1):enumeration values do not fit within field width\n"),
     # Signal.validate_property
     ("signal {signalwidth=2;}ss;",
      "ERROR:test(1):signal instantiation width does not match explicitly defined signal width\n"),

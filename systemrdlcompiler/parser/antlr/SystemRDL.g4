@@ -335,7 +335,7 @@ enum_body
 
 enum_entry
   : s_id
-    EQ num
+    (EQ num)?
     ( LBRACE (enum_property_assign)* RBRACE )?
     SEMI
   ;

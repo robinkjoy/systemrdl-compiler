@@ -172,27 +172,46 @@ class Listener(SystemRDLListener):
     def extract_enum_body(ctx, enum):
         if len(ctx.enum_entry()) == 0:
             log.error('no entries in enum', ctx.start.line)
+        last_value = -1
+        size = None
         for entryctx in ctx.children:
             if not isinstance(entryctx, SystemRDLParser.Enum_entryContext):
                 continue
             name = entryctx.getChild(0).getText()
-            value = extract_num(entryctx.getChild(2).getText(),
-                                entryctx.getChild(2).start.line)
-            if not isinstance(value, tuple):
-                log.error('enum entry value should be sizedNumeric', entryctx.start.line)
             if any([x for x in enum.comps if x.def_id == name]):
                 log.error(f'{name} already defined in enum', entryctx.start.line)
-            if len(enum.comps) != 0 and value[0] != enum.comps[0].value[0]:
-                log.error('size does not match others', entryctx.start.line)
-            if any([x for x in enum.comps if x.value == value]):
-                log.error(f'{entryctx.getChild(2).getText()} already defined in enum', entryctx.start.line)
+            if entryctx.num() is not None:
+                value = extract_num(entryctx.getChild(2).getText(),
+                                    entryctx.getChild(2).start.line)
+                if not isinstance(value, tuple):
+                    log.error('enum entry value should be sizedNumeric', entryctx.start.line)
+                if size is not None and value[0] != size:
+                    log.error('size does not match others', entryctx.start.line)
+                size = value[0]
+                if any([x for x in enum.comps if x.value[1] == value[1]]):
+                    log.error(f'{entryctx.getChild(2).getText()} already defined in enum', entryctx.start.line)
+            else:
+                value = (size, last_value+1)
+                if size is not None and value[1] >= 2**size:
+                    log.error(f'auto-assigned value {value[1]} for {name} do not fit in existing value size',
+                              entryctx.start.line)
+                log.info(f'{name} in {enum.def_id} assigned value {value[1]}')
             entry = Component.EnumEntry(name, value)
+            last_value = value[1]
             for propctx in entryctx.children:
                 if not isinstance(propctx, SystemRDLParser.Enum_property_assignContext):
                     continue
                 setattr(entry, propctx.getChild(0).getText(),
                         propctx.getChild(2).getText())
             enum.comps.append(entry)
+        if any([x for x in enum.comps if x.value[0] is None]):
+            size = next((x for x in enum.comps if x.value[0] is not None), None)
+            if size is None:
+                max_value = max(map(lambda x: x.value[1], enum.comps))
+                size = max(max_value.bit_length(), 1)
+            for x in enum.comps:
+                if x.value[0] is None:
+                    x.value = (size, x.value[1])
         return enum
 
     def extract_instance_ref(self, ctx):

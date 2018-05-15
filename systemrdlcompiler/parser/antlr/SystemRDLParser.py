@@ -8,7 +8,7 @@ import sys
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\u0085")
-        buf.write("\u01ad\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\u01af\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
@@ -47,21 +47,21 @@ def serializedATN():
         buf.write("\34\3\34\3\34\3\34\3\34\3\34\3\34\3\34\3\34\3\34\3\34")
         buf.write("\5\34\u0181\n\34\3\35\3\35\3\36\3\36\3\37\3\37\3 \3 \3")
         buf.write("!\3!\3!\3!\3!\3\"\3\"\7\"\u0192\n\"\f\"\16\"\u0195\13")
-        buf.write("\"\3\"\3\"\3#\3#\3#\3#\3#\7#\u019e\n#\f#\16#\u01a1\13")
-        buf.write("#\3#\5#\u01a4\n#\3#\3#\3$\3$\3$\3$\3$\3$\2\2%\2\4\6\b")
-        buf.write("\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668")
-        buf.write(":<>@BDF\2\b\3\2\t\16\4\2\n\r\22\22\3\2\t\r\3\2im\4\2q")
-        buf.write("q\u0084\u0084\3\2\27\30\2\u0212\2O\3\2\2\2\4T\3\2\2\2")
-        buf.write("\6`\3\2\2\2\bc\3\2\2\2\nm\3\2\2\2\fw\3\2\2\2\16\u0083")
-        buf.write("\3\2\2\2\20\u0085\3\2\2\2\22\u0087\3\2\2\2\24\u0089\3")
-        buf.write("\2\2\2\26\u008b\3\2\2\2\30\u008d\3\2\2\2\32\u00a3\3\2")
-        buf.write("\2\2\34\u00b8\3\2\2\2\36\u00c2\3\2\2\2 \u00d6\3\2\2\2")
-        buf.write("\"\u00de\3\2\2\2$\u00ea\3\2\2\2&\u00fa\3\2\2\2(\u00fc")
+        buf.write("\"\3\"\3\"\3#\3#\3#\5#\u019c\n#\3#\3#\7#\u01a0\n#\f#\16")
+        buf.write("#\u01a3\13#\3#\5#\u01a6\n#\3#\3#\3$\3$\3$\3$\3$\3$\2\2")
+        buf.write("%\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62")
+        buf.write("\64\668:<>@BDF\2\b\3\2\t\16\4\2\n\r\22\22\3\2\t\r\3\2")
+        buf.write("im\4\2qq\u0084\u0084\3\2\27\30\2\u0215\2O\3\2\2\2\4T\3")
+        buf.write("\2\2\2\6`\3\2\2\2\bc\3\2\2\2\nm\3\2\2\2\fw\3\2\2\2\16")
+        buf.write("\u0083\3\2\2\2\20\u0085\3\2\2\2\22\u0087\3\2\2\2\24\u0089")
+        buf.write("\3\2\2\2\26\u008b\3\2\2\2\30\u008d\3\2\2\2\32\u00a3\3")
+        buf.write("\2\2\2\34\u00b8\3\2\2\2\36\u00c2\3\2\2\2 \u00d6\3\2\2")
+        buf.write("\2\"\u00de\3\2\2\2$\u00ea\3\2\2\2&\u00fa\3\2\2\2(\u00fc")
         buf.write("\3\2\2\2*\u0107\3\2\2\2,\u0109\3\2\2\2.\u0113\3\2\2\2")
         buf.write("\60\u0115\3\2\2\2\62\u0122\3\2\2\2\64\u0170\3\2\2\2\66")
         buf.write("\u0180\3\2\2\28\u0182\3\2\2\2:\u0184\3\2\2\2<\u0186\3")
         buf.write("\2\2\2>\u0188\3\2\2\2@\u018a\3\2\2\2B\u018f\3\2\2\2D\u0198")
-        buf.write("\3\2\2\2F\u01a7\3\2\2\2HN\5\30\r\2IN\5@!\2JN\5\32\16\2")
+        buf.write("\3\2\2\2F\u01a9\3\2\2\2HN\5\30\r\2IN\5@!\2JN\5\32\16\2")
         buf.write("KN\5&\24\2LN\5\4\3\2MH\3\2\2\2MI\3\2\2\2MJ\3\2\2\2MK\3")
         buf.write("\2\2\2ML\3\2\2\2NQ\3\2\2\2OM\3\2\2\2OP\3\2\2\2PR\3\2\2")
         buf.write("\2QO\3\2\2\2RS\7\2\2\3S\3\3\2\2\2TU\7\3\2\2UV\5:\36\2")
@@ -218,18 +218,19 @@ def serializedATN():
         buf.write("\7t\2\2\u0190\u0192\5D#\2\u0191\u0190\3\2\2\2\u0192\u0195")
         buf.write("\3\2\2\2\u0193\u0191\3\2\2\2\u0193\u0194\3\2\2\2\u0194")
         buf.write("\u0196\3\2\2\2\u0195\u0193\3\2\2\2\u0196\u0197\7u\2\2")
-        buf.write("\u0197C\3\2\2\2\u0198\u0199\5:\36\2\u0199\u019a\7\u0081")
-        buf.write("\2\2\u019a\u01a3\5<\37\2\u019b\u019f\7t\2\2\u019c\u019e")
-        buf.write("\5F$\2\u019d\u019c\3\2\2\2\u019e\u01a1\3\2\2\2\u019f\u019d")
-        buf.write("\3\2\2\2\u019f\u01a0\3\2\2\2\u01a0\u01a2\3\2\2\2\u01a1")
-        buf.write("\u019f\3\2\2\2\u01a2\u01a4\7u\2\2\u01a3\u019b\3\2\2\2")
-        buf.write("\u01a3\u01a4\3\2\2\2\u01a4\u01a5\3\2\2\2\u01a5\u01a6\7")
-        buf.write("|\2\2\u01a6E\3\2\2\2\u01a7\u01a8\t\7\2\2\u01a8\u01a9\7")
-        buf.write("\u0081\2\2\u01a9\u01aa\5> \2\u01aa\u01ab\7|\2\2\u01ab")
-        buf.write("G\3\2\2\2(MO^`is~\u0090\u0097\u0099\u009e\u00a3\u00a6")
+        buf.write("\u0197C\3\2\2\2\u0198\u019b\5:\36\2\u0199\u019a\7\u0081")
+        buf.write("\2\2\u019a\u019c\5<\37\2\u019b\u0199\3\2\2\2\u019b\u019c")
+        buf.write("\3\2\2\2\u019c\u01a5\3\2\2\2\u019d\u01a1\7t\2\2\u019e")
+        buf.write("\u01a0\5F$\2\u019f\u019e\3\2\2\2\u01a0\u01a3\3\2\2\2\u01a1")
+        buf.write("\u019f\3\2\2\2\u01a1\u01a2\3\2\2\2\u01a2\u01a4\3\2\2\2")
+        buf.write("\u01a3\u01a1\3\2\2\2\u01a4\u01a6\7u\2\2\u01a5\u019d\3")
+        buf.write("\2\2\2\u01a5\u01a6\3\2\2\2\u01a6\u01a7\3\2\2\2\u01a7\u01a8")
+        buf.write("\7|\2\2\u01a8E\3\2\2\2\u01a9\u01aa\t\7\2\2\u01aa\u01ab")
+        buf.write("\7\u0081\2\2\u01ab\u01ac\5> \2\u01ac\u01ad\7|\2\2\u01ad")
+        buf.write("G\3\2\2\2)MO^`is~\u0090\u0097\u0099\u009e\u00a3\u00a6")
         buf.write("\u00aa\u00b2\u00b8\u00bf\u00c4\u00c8\u00cc\u00d0\u00d4")
         buf.write("\u00da\u00e3\u00e8\u00ef\u00fa\u0105\u0107\u010c\u0113")
-        buf.write("\u011b\u0122\u0170\u0180\u0193\u019f\u01a3")
+        buf.write("\u011b\u0122\u0170\u0180\u0193\u019b\u01a1\u01a5")
         return buf.getvalue()
 
 
@@ -3111,15 +3112,15 @@ class SystemRDLParser ( Parser ):
             return self.getTypedRuleContext(SystemRDLParser.S_idContext,0)
 
 
+        def SEMI(self):
+            return self.getToken(SystemRDLParser.SEMI, 0)
+
         def EQ(self):
             return self.getToken(SystemRDLParser.EQ, 0)
 
         def num(self):
             return self.getTypedRuleContext(SystemRDLParser.NumContext,0)
 
-
-        def SEMI(self):
-            return self.getToken(SystemRDLParser.SEMI, 0)
 
         def LBRACE(self):
             return self.getToken(SystemRDLParser.LBRACE, 0)
@@ -3157,31 +3158,37 @@ class SystemRDLParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 406
             self.s_id()
-            self.state = 407
-            self.match(SystemRDLParser.EQ)
-            self.state = 408
-            self.num()
-            self.state = 417
+            self.state = 409
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==SystemRDLParser.LBRACE:
-                self.state = 409
-                self.match(SystemRDLParser.LBRACE)
-                self.state = 413
-                self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                while _la==SystemRDLParser.T__20 or _la==SystemRDLParser.T__21:
-                    self.state = 410
-                    self.enum_property_assign()
-                    self.state = 415
-                    self._errHandler.sync(self)
-                    _la = self._input.LA(1)
-
-                self.state = 416
-                self.match(SystemRDLParser.RBRACE)
+            if _la==SystemRDLParser.EQ:
+                self.state = 407
+                self.match(SystemRDLParser.EQ)
+                self.state = 408
+                self.num()
 
 
             self.state = 419
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==SystemRDLParser.LBRACE:
+                self.state = 411
+                self.match(SystemRDLParser.LBRACE)
+                self.state = 415
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                while _la==SystemRDLParser.T__20 or _la==SystemRDLParser.T__21:
+                    self.state = 412
+                    self.enum_property_assign()
+                    self.state = 417
+                    self._errHandler.sync(self)
+                    _la = self._input.LA(1)
+
+                self.state = 418
+                self.match(SystemRDLParser.RBRACE)
+
+
+            self.state = 421
             self.match(SystemRDLParser.SEMI)
         except RecognitionException as re:
             localctx.exception = re
@@ -3228,18 +3235,18 @@ class SystemRDLParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 421
+            self.state = 423
             _la = self._input.LA(1)
             if not(_la==SystemRDLParser.T__20 or _la==SystemRDLParser.T__21):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 422
-            self.match(SystemRDLParser.EQ)
-            self.state = 423
-            self.string()
             self.state = 424
+            self.match(SystemRDLParser.EQ)
+            self.state = 425
+            self.string()
+            self.state = 426
             self.match(SystemRDLParser.SEMI)
         except RecognitionException as re:
             localctx.exception = re

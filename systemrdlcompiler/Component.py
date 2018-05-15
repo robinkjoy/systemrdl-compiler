@@ -506,6 +506,8 @@ class Field(Component):
                 fwpropval = getattr(self, fwprop, None)
                 if isinstance(fwpropval, Signal) and fwpropval.signalwidth != value:
                     log.error(f'size of {fwprop} value does not match field width', line)
+            if self.encode is not None and self.encode.comps[0].value[0] > value:
+                log.error('enumeration values do not fit within field width', self.line)
         if isinstance(value, Signal) and prop in self.ONEBIT_SIG_PROPS and value.signalwidth != 1:
             log.error(f'width of {prop} signal should be 1', line)
         if prop in ('sw', 'hw'):
@@ -517,7 +519,10 @@ class Field(Component):
                 hw = value
             invalid_accesses = [('w', 'w'), ('w', 'na'), ('na', 'w'), ('na', 'na')]
             if (sw, hw) in invalid_accesses:  # (Table 9)
-                log.error('invalid field access pair in Field', self.line, self.inst_id)
+                log.error(f'invalid field access pair in Field', self.line)
+        if prop == 'encode':
+            if self.fieldwidth is not None and value.comps[0].value[0] > self.fieldwidth:
+                log.error('enumeration values do not fit within field width', self.line)
 
         return value
 
